@@ -1,0 +1,362 @@
+﻿@using Presentacion.Core
+@model GestionarOrdenMedicaViewModel
+@{
+    ViewData["Title"] = "Gestionar Orden Médica";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@using (Html.BeginForm("GestionarOrdenMedica", "OrdenMedica", FormMethod.Post, new { id = "agregarOrdenMedicaForm" }))
+{
+    <div class="container-fluid">
+        <div class="row px-xl-5">
+            <div class="col">
+                <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">@Model.TipoOperacion</span></h5>
+            </div>
+        </div>
+        <div class="bg-light p-30 mb-5">
+
+            @if (Model.RespuestaServidor.IsFailure)
+            {
+                <div class="row">
+                    <div class="col-12 form-group">
+                        <div class="alert alert-danger text-center" role="alert">
+                            <strong>Error:</strong> @Model.RespuestaServidor.GetErrorsAsString()
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label for="OrdenMedica" class="font-weight-bold">Codigo:</label>
+                    @Html.TextBoxFor(
+                                      model => model.OrdenMedica.OrdenMedicaId,
+                                      new
+                                      {
+                                          @class = "form-control",
+                                          @readonly = Model.TipoOperacion == TipoOperacion.MODIFICAR ? "readonly" : null
+                                      })
+                    @Html.ValidationMessageFor(model => model.OrdenMedica.OrdenMedicaId, "", new { @class = "help-block text-danger" })
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label for="MedicoId" class="font-weight-bold">Médico:</label>
+                    @Html.DropDownListFor(
+                                      model => model.OrdenMedica.MedicoId,
+                                      new SelectList(Model.Medicos, "MedicoId", "NombreCompleto"),
+                                      "-- Seleccionar Médico --",
+                                      new
+                                      {
+                                          @class = "form-control",
+                                          @readonly = Model.TipoOperacion == TipoOperacion.MODIFICAR ? "readonly" : null
+                                      })
+                    @Html.ValidationMessageFor(model => model.OrdenMedica.MedicoId, "", new { @class = "help-block text-danger" })
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label for="PacienteId" class="font-weight-bold">Paciente:</label>
+                    @Html.DropDownListFor(
+                                      model => model.OrdenMedica.PacienteId,
+                                      new SelectList(Model.Pacientes, "PacienteId", "NombreCompleto"),
+                                      "-- Seleccionar Paciente --",
+                                      new
+                                      {
+                                          @class = "form-control",
+                                          @readonly = Model.TipoOperacion == TipoOperacion.MODIFICAR ? "readonly" : null
+                                      })
+                    @Html.ValidationMessageFor(model => model.OrdenMedica.PacienteId, "", new { @class = "help-block text-danger" })
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label for="ObraSocial" class="font-weight-bold">Obra Social:</label>
+                    @Html.DropDownListFor(
+                                      model => model.OrdenMedica.ObraSocial,
+                                      new SelectList(Model.ObrasSociales),
+                                      "-- Seleccionar Obra Social --",
+                                      new
+                                      {
+                                          @class = "form-control",
+                                          @readonly = Model.TipoOperacion == TipoOperacion.MODIFICAR ? "readonly" : null
+                                      })
+                    @Html.ValidationMessageFor(model => model.OrdenMedica.ObraSocial, "", new { @class = "help-block text-danger" })
+                </div>
+
+                <input type="hidden" name="OrdenMedica.Fecha" 
+                       value="@(Model?.OrdenMedica?.Fecha ?? DateTime.Now)" />
+            </div>
+
+            <hr />
+
+            <!-- Sección para agregar fármacos -->
+            <h5 class="section-title text-uppercase mb-3">Buscar Farmacos</h5>
+
+            <div id="lineasOrdenMedicaBody">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <input type="text" id="numeroRegistro" class="form-control" placeholder="Por Número de Registro">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" id="nombreFarmaco" class="form-control" placeholder="Por Nombre">
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-primary" id="buscarFarmaco">Buscar</button>
+                    </div>
+                </div>
+
+                <!-- Select para resultados de búsqueda -->
+                <div id="farmacoResultados" class="mb-3">
+                    <select id="selectFarmaco" class="form-control">
+                        <option value="">-- Seleccione un fármaco --</option>
+                    </select>
+                </div>
+
+                <!-- Inputs para cantidad, frecuencia y unica aplicacion-->
+                <div class="row mb-3">
+                    <div class="col-md-2">
+                        <div class="form-check mt-2">
+                            <input type="checkbox" class="form-check-input" id="unicaAplicacion">
+                            <label class="form-check-label" for="unicaAplicacion">Única aplicación</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" id="cantidadFarmaco" class="form-control" placeholder="Cantidad">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" id="frecuenciaHoras" class="form-control" placeholder="Frecuencia (Horas)">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <input type="text" id="observacion" class="form-control" placeholder="Observación">
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-success" id="agregarLinea">Agregar</button>
+                    </div>
+                </div>
+
+                <hr />
+
+                <div id="lineasOrdenMedica" class="pt-3">
+                    <h6>Farmacos Agregados:</h6>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>N° Registro</th>
+                                <th>Fármaco</th>
+                                <th>Cantidad</th>
+                                <th>Frecuencia</th>
+                                <th>Observación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaLineasOrdenMedica">
+                            @if (Model.OrdenMedica.LineaOrdenMedica != null && Model.OrdenMedica.LineaOrdenMedica.Any())
+                            {
+                                @foreach (var linea in Model.OrdenMedica.LineaOrdenMedica)
+                                {
+                                    <tr data-lineaid="@linea.NumeroRegistro">
+                                        <td>@linea.NumeroRegistro</td>
+                                        <td>@linea.Nombre</td>
+                                        <td>@linea.Cantidad </td>
+                                        <td>@linea.TextoFrecuencia</td>
+                                        <td>@linea.Observacion</td>
+                                        <td>
+                                            <button type="button" class="btn btn-danger btn-sm" onclick="removeLinea('@linea.NumeroRegistro', false)">Eliminar</button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center">Aún no se han agregado fármacos</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    @Html.HiddenFor(model => Model.OrdenMedica.OrdenMedicaId)
+                    @Html.HiddenFor(model => Model.TipoOperacion)
+                    <button class="btn btn-primary py-2 px-4 mr-2" type="submit" id="sendMessageButton"> Guardar </button>
+                    <a class="btn btn-secondary py-2 px-4 mr-2" asp-area="" asp-controller="OrdenMedica" asp-action="Index">Atrás</a>
+                </div>
+            </div>
+
+            <div id="lineasHiddenInputs">
+                @if (Model.OrdenMedica.LineaOrdenMedica != null)
+                {
+                    for (int i = 0; i < Model.OrdenMedica.LineaOrdenMedica.Count; i++)
+                    {
+                        <div data-lineaid="@Model.OrdenMedica.LineaOrdenMedica[i].NumeroRegistro">
+                            <input type="hidden" name="OrdenMedica.LineaOrdenMedica[@i].LineaOrdenMedicaId"
+                                   value="@Model.OrdenMedica.LineaOrdenMedica[i].LineaOrdenMedicaId" />
+                            <input type="hidden" name="OrdenMedica.LineaOrdenMedica[@i].NumeroRegistro"
+                                   value="@Model.OrdenMedica.LineaOrdenMedica[i].NumeroRegistro" />
+                            <input type="hidden" name="OrdenMedica.LineaOrdenMedica[@i].Nombre"
+                                   value="@Model.OrdenMedica.LineaOrdenMedica[i].Nombre" />
+                            <input type="hidden" name="OrdenMedica.LineaOrdenMedica[@i].Cantidad"
+                                   value="@Model.OrdenMedica.LineaOrdenMedica[i].Cantidad" />
+                            <input type="hidden" name="OrdenMedica.LineaOrdenMedica[@i].FrecuenciaHoras"
+                                   value="@Model.OrdenMedica.LineaOrdenMedica[i].FrecuenciaHoras" />
+                            <input type="hidden" name="OrdenMedica.LineaOrdenMedica[@i].UnicaAplicacion"
+                                   value="@Model.OrdenMedica.LineaOrdenMedica[i].UnicaAplicacion.ToString()" />
+                            <input type="hidden" name="OrdenMedica.LineaOrdenMedica[@i].Observacion"
+                                   value="@Model.OrdenMedica.LineaOrdenMedica[i].Observacion" />
+                            <input type="hidden" name="OrdenMedica.LineaOrdenMedica[@i].OrdenMedicaId"
+                                   value="@Model.OrdenMedica.LineaOrdenMedica[i].OrdenMedicaId" />
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+
+            function toggleInputs() {
+                const isUnicaAplicacion = $("#unicaAplicacion").is(":checked");
+                const $cantidadInput = $("#cantidadFarmaco");
+                const $frecuenciaInput = $("#frecuenciaHoras");
+
+                if (isUnicaAplicacion) {
+                    $cantidadInput.val("1").prop("readonly", true);
+                    $frecuenciaInput.val("").prop("readonly", true);
+                } else {
+                    $cantidadInput.val("").prop("readonly", false);
+                    $frecuenciaInput.val("").prop("readonly", false);
+                }
+            }
+
+            $("#unicaAplicacion").change(function() {
+                toggleInputs();
+            });
+
+            // Inicializar el estado al cargar la página
+            toggleInputs();
+
+            $("#buscarFarmaco").click(function () {
+                const numeroRegistro = $("#numeroRegistro").val();
+                const nombre = $("#nombreFarmaco").val();
+
+                $.get(`/Farmaco/BuscarPorNumeroRegistroONombre`, { numeroRegistro, nombre }, function (farmacos) {
+                    const $selectFarmaco = $("#selectFarmaco");
+                    $selectFarmaco.empty();
+                    $selectFarmaco.append('<option value="">-- Seleccione un fármaco --</option>');
+
+                    farmacos.forEach(farmaco => {
+                        $selectFarmaco.append(
+                            `<option value="${farmaco.nRegistro}">${farmaco.nombre}</option>`
+                        );
+                    });
+                });
+            });
+
+            $("#agregarLinea").click(function () {
+                const $selectFarmaco = $("#selectFarmaco");
+                var frecuenciaHoras = $("#frecuenciaHoras").val();
+                const cantidadFarmaco = $("#cantidadFarmaco").val();
+                const unicaAplicacion = $("#unicaAplicacion").is(":checked");
+                const observacion = $("#observacion").val();
+                const nombre = $selectFarmaco.find("option:selected").text();
+
+                if (!$selectFarmaco.val()) {
+                    alert("Debe seleccionar un fármaco.");
+                    return;
+                }
+                if (!unicaAplicacion && (!frecuenciaHoras || !cantidadFarmaco)) {
+                    alert("Debe ingresar la cantidad y la frecuencia.");
+                    return;
+                }
+
+                const $tablaBody = $("#tablaLineasOrdenMedica");
+
+                if ($tablaBody.find("tr td[colspan='4']").length) {
+                    $tablaBody.empty();
+                }
+
+                frecuenciaHoras = frecuenciaHoras == "" ? "Única aplicación" : frecuenciaHoras;
+
+                const row = `
+                    <tr data-lineaid="${$selectFarmaco.val()}">
+                        <td>${$selectFarmaco.val()}</td>
+                        <td>${nombre}</td>
+                        <td>${cantidadFarmaco}</td>
+                        <td>${frecuenciaHoras}</td>
+                        <td>${observacion}</td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="removeLinea('${$selectFarmaco.val()}', true)">Eliminar</button>
+                        </td>
+                    </tr>
+                `;
+
+                $tablaBody.append(row);
+
+                const index = $tablaBody.find("tr").length - 1;
+
+                var ordenId = "@Model.OrdenMedica.OrdenMedicaId";
+
+                $("#lineasHiddenInputs").append(`
+                    <div data-lineaid="${$selectFarmaco.val()}">
+                        <input type="hidden" name="OrdenMedica.LineaOrdenMedica[${index}].LineaOrdenMedicaId" value="0">
+                        <input type="hidden" name="OrdenMedica.LineaOrdenMedica[${index}].NumeroRegistro" value="${$selectFarmaco.val()}">
+                        <input type="hidden" name="OrdenMedica.LineaOrdenMedica[${index}].Nombre" value="${nombre}">
+                        <input type="hidden" name="OrdenMedica.LineaOrdenMedica[${index}].Cantidad" value="${cantidadFarmaco}">
+                        <input type="hidden" name="OrdenMedica.LineaOrdenMedica[${index}].FrecuenciaHoras" value="${frecuenciaHoras}">
+                        <input type="hidden" name="OrdenMedica.LineaOrdenMedica[${index}].UnicaAplicacion" value="${unicaAplicacion}">
+                        <input type="hidden" name="OrdenMedica.LineaOrdenMedica[${index}].Observacion" value="${observacion}">
+                        <input type="hidden" name="OrdenMedica.LineaOrdenMedica[${index}].OrdenMedicaId" value="${ordenId}">
+                    </div>
+                `);
+
+                $selectFarmaco.val("");
+                $("#frecuenciaHoras").val("");
+                $("#cantidadFarmaco").val("");
+                $("#numeroRegistro").val("");
+                $("#nombreFarmaco").val("");
+                $("#observacion").val("");
+                $("#unicaAplicacion").prop("checked", false);
+                toggleInputs();
+            });
+
+            $("#tablaLineasOrdenMedica").on("click", ".btnEliminar", function () {
+                const rowIndex = $(this).closest("tr").index();
+                $(this).closest("tr").remove();
+
+                const $inputs = $("#lineasHiddenInputs").children();
+                $inputs.slice(rowIndex * 3, rowIndex * 3 + 3).remove();
+
+                const $tablaBody = $("#tablaLineasOrdenMedica");
+                if ($tablaBody.find("tr").length === 0) {
+                    $tablaBody.append('<tr><td colspan="4" class="text-center">No se han agregado líneas</td></tr>');
+                }
+            });
+            
+        });
+
+        function removeLinea(numeroRegistro, isNew) {
+            const $row = $(`#tablaLineasOrdenMedica tr[data-lineaid="${numeroRegistro}"]`);
+            if ($row.length) {
+                $row.css("display", "none");
+                $row.addClass("hidden-row");
+            }
+
+            const $hiddenDiv = $(`#lineasHiddenInputs div[data-lineaid="${numeroRegistro}"]`);
+            if ($hiddenDiv.length) {
+                $hiddenDiv.css("display", "none");
+                $hiddenDiv.addClass("hidden-row");
+
+                $hiddenDiv.find("input").val("");
+            }
+
+            if ($("#tablaLineasOrdenMedica tr:not(.hidden-row)").length === 0) {
+                $("#tablaLineasOrdenMedica").append('<tr><td colspan="5" class="text-center">No se han agregado líneas</td></tr>');
+            }
+        }
+    </script>
+}

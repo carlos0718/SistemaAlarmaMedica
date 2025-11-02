@@ -1,0 +1,58 @@
+@{
+    ViewData["Title"] = "Acceso Denegado";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="error-template">
+                <h1 class="display-1 text-danger">
+                    <i class="fas fa-ban"></i>
+                </h1>
+                <h2 class="display-4">Acceso Denegado</h2>
+                <p class="lead">Lo sentimos, no tienes permisos para acceder a esta página.</p>
+                <div class="error-details mt-4 mb-4">
+                    <p class="text-muted">
+                        Tu rol de usuario no tiene los permisos necesarios para visualizar este contenido.
+                        Si crees que esto es un error, por favor contacta al administrador del sistema.
+                    </p>
+                </div>
+                <div class="error-actions">
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-primary btn-lg me-2">
+                        <i class="fas fa-home"></i> Volver al Inicio
+                    </a>
+                    <a asp-controller="Login" asp-action="Logout" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .error-template {
+        padding: 40px 15px;
+    }
+
+    .error-template h1 {
+        font-size: 120px;
+        margin-bottom: 20px;
+    }
+
+    .error-actions {
+        margin-top: 30px;
+        margin-bottom: 30px;
+    }
+
+    .error-actions .btn {
+        margin: 5px;
+    }
+
+    .error-details {
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+</style>

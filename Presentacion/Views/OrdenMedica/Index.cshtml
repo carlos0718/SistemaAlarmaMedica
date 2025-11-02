@@ -1,0 +1,137 @@
+﻿@using Presentacion.Core
+@using Presentacion.Core.DTOs
+@model OrdenMedicaViewModel
+@inject IHttpContextAccessor _httpContextAccessor
+
+@{
+    ViewData["Title"] = "Ordenes Médicas";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // Obtener el tipo de usuario de la sesión
+    var tipoUsuarioInt = _httpContextAccessor.HttpContext?.Session.GetInt32("Sesion_UsuarioTipo");
+    var tipoUsuario = (TipoUsuarioDto)(tipoUsuarioInt ?? (int)TipoUsuarioDto.PACIENTE);
+}
+
+<div class="container-fluid">
+    <div class="row px-xl-5">
+        <div class="col">
+            <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">Ordenes Médicas</span></h5>
+        </div>
+    </div>
+    <div class="row px-xl-5 mb-1 justify-content-end">
+        <div class="col">
+            <div class="input-group">
+                <input type="text" id="searchText" class="form-control" placeholder="">
+                <div class="input-group-append">
+                    <span id="searchInput" class="input-group-text bg-transparent text-primary">
+                        <i class="fa fa-search"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-auto">
+            @if (tipoUsuario != TipoUsuarioDto.PACIENTE)
+            {
+                <a class="btn btn-primary px-3" asp-area="" asp-controller="OrdenMedica" asp-action="GestionarOrdenMedica"><i class="fa fa-plus"></i> Nuevo</a>
+            }
+        </div>
+    </div>
+    <div class="row px-xl-5">
+        <div class="col table-responsive mb-5">
+            <div id="searchResults">
+                <table id="ordenMedicaTable" class="table table-light table-borderless table-hover text-center mb-0">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Código</th>
+                            <th>Medico</th>
+                            <th>Especialidad</th>
+                            <th>Paciente</th>
+                            <th>Fecha</th>
+                            <th>Obra Social</th>
+                            <th>Entregado?</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="align-middle">
+                        @foreach (var item in Model.OrdenesMedicas)
+                        {
+                            <tr>
+                                <td class="align-middle">@item.OrdenMedicaId</td>
+                                <td class="align-middle">@item.Medico.NombreCompleto</td>
+                                <td class="align-middle">@item.Medico.Especialidad.Nombre</td>
+                                <td class="align-middle">@item.Paciente.NombreCompleto</td>
+                                <td class="align-middle">@item.Fecha?.ToString("dd/MM/yyyy")</td>
+                                <td class="align-middle">@item.ObraSocial</td>
+                                <td class="align-middle">@((item.EntregadaAlPaciente?? false) ? "SI" : "NO")</td>
+                                <td class="align-middle">
+                                    <button class="btn btn-sm btn-primary btn-modify-orden-medica" title="Editar" data-orden-medica-id="@item.OrdenMedicaId"><i class="fas fa-edit"></i></button>
+                                    @if (item.EntregadaAlPaciente != true)
+                                    {
+                                        <button class="btn btn-sm btn-danger btn-delete-orden-medica" title="Eliminar" data-orden-medica-id="@item.OrdenMedicaId" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
+                </div>
+                <div class="modal-body">
+                    ¿Está seguro de que desea eliminar esta Orden Médica? Esta acción no se puede deshacer.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <form id="deleteForm" method="post" action="/OrdenMedica/Eliminar">
+                        <input type="hidden" name="ordenMedicaId" id="ordenMedicaIdToDelete" />
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        ConfigDataTableGlobal("ordenMedicaTable");
+
+        $("#searchInput").on("click", function () {
+            var searchQuery = $("#searchText").val();
+            var redirectUrl = "/OrdenMedica/Index/?filtro=" + encodeURIComponent(searchQuery);
+            window.location.href = redirectUrl;
+        });
+
+        $('.btn-modify-orden-medica').on('click', function () {
+            var ordenMedicaId = $(this).data('orden-medica-id');
+            window.location.href = '/OrdenMedica/GestionarOrdenMedica/?ordenMedicaId=' + ordenMedicaId + '&tipoOperacion=MODIFICAR';
+        });
+
+        $(".btn-delete-orden-medica").on("click", function () {
+            var ordenMedicaId = $(this).data("orden-medica-id");
+            $("#ordenMedicaIdToDelete").val(ordenMedicaId);
+            $("#deleteModal").modal("show");
+        });
+
+        $(".btn-secondary[data-bs-dismiss='modal']").on("click", function () {
+            $("#deleteModal").modal("hide");
+        });
+
+        @if (Model.RespuestaServidor != null && Model.RespuestaServidor.IsFailure)
+        {
+            <text>
+                showErrorModal(@Html.Raw(Json.Serialize(Model.RespuestaServidor.GetErrorsAsString())));
+            </text>
+        }
+    });
+</script>

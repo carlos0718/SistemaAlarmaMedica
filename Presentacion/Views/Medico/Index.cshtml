@@ -1,0 +1,118 @@
+﻿@model MedicoViewModel
+@{
+    ViewData["Title"] = "Medicos";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row px-xl-5">
+        <div class="col">
+            <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">Lista de Medicos</span></h5>
+        </div>
+    </div>
+    <div class="row px-xl-5 mb-1 justify-content-end">
+        <div class="col">
+            <div class="input-group">
+                <input type="text" id="searchText" class="form-control" placeholder="Buscar por Nombre">
+                <div class="input-group-append">
+                    <span id="searchInput" class="input-group-text bg-transparent text-primary">
+                        <i class="fa fa-search"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-auto">
+            <a class="btn btn-primary px-3" asp-area="" asp-controller="Medico" asp-action="GestionarMedico"><i class="fa fa-plus"></i> Nuevo</a>
+        </div>
+    </div>
+    <div class="row px-xl-5">
+        <div class="col table-responsive mb-5">
+            <div id="searchResults">
+                <table id="medicoTable" class="table table-light table-borderless table-hover text-center mb-0">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Apellido</th>
+                            <th>Nombre</th>
+                            <th>Matricula</th>
+                            <th>Especialidad</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="align-middle">
+                        @foreach (var item in Model.Medicos)
+                        {
+                            <tr>
+                                <td class="align-middle">@item.Apellido</td>
+                                <td class="align-middle">@item.Nombre</td>
+                                <td class="align-middle">@item.Matricula</td>
+                                <td class="align-middle">@item.Especialidad.Nombre</td>
+                                <td class="align-middle">
+                                    <button class="btn btn-sm btn-primary btn-modify-medico" title="Editar" data-medico-id="@item.MedicoId"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-sm btn-danger btn-delete-medico" title="Eliminar" data-medico-id="@item.MedicoId" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
+                </div>
+                <div class="modal-body">
+                    ¿Está seguro de que desea eliminar este médico? Esta acción no se puede deshacer.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <form id="deleteForm" method="post" action="/Medico/Eliminar">
+                        <input type="hidden" name="medicoId" id="medicoIdToDelete" />
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        
+        ConfigDataTableGlobal("medicoTable");
+
+        $("#searchInput").on("click", function () {
+            var searchQuery = $("#searchText").val();
+            var redirectUrl = "/Medico/Index/?filtro=" + encodeURIComponent(searchQuery);
+            window.location.href = redirectUrl;
+        });
+
+        $('.btn-modify-medico').on('click', function () {
+            var medicoId = $(this).data('medico-id');
+            window.location.href = '/Medico/GestionarMedico/?medicoId=' + medicoId + '&tipoOperacion=MODIFICAR';
+        });
+
+        $(".btn-delete-medico").on("click", function () {
+            var medicoId = $(this).data("medico-id");
+            $("#medicoIdToDelete").val(medicoId);
+            $("#deleteModal").modal("show");
+        });
+
+        $(".btn-secondary[data-bs-dismiss='modal']").on("click", function() {
+            $("#deleteModal").modal("hide");
+        });
+
+        @if (Model.RespuestaServidor != null && Model.RespuestaServidor.IsFailure)
+        {
+            <text>
+                showErrorModal(@Html.Raw(Json.Serialize(Model.RespuestaServidor.GetErrorsAsString())));
+            </text>
+        }
+    });
+</script>

@@ -1,0 +1,282 @@
+@using Presentacion.Core
+@using Presentacion.Core.DTOs
+@model GestionarTurnoViewModel
+@{
+    ViewData["Title"] = Model.TipoUsuario == TipoUsuarioDto.PACIENTE ? "Reservar Turno" : "Gestión Turno";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var tituloFormulario = Model.TipoUsuario == TipoUsuarioDto.PACIENTE ? "Reservar Turno" : $"{Model.TipoOperacion} Turno";
+}
+
+@using (Html.BeginForm("GestionarTurno", "Turno", FormMethod.Post, new { id = "gestionarTurnoForm" }))
+{
+    <div class="container-fluid">
+        <div class="row px-xl-5">
+            <div class="col">
+                <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">@tituloFormulario</span></h5>
+            </div>
+        </div>
+
+        @* Mensaje de confirmación *@
+        @if (!string.IsNullOrEmpty(Model.MensajeConfirmacion))
+        {
+            <div class="row px-xl-5 mb-3">
+                <div class="col">
+                    <div class="alert alert-success text-center" role="alert">
+                        <i class="fas fa-check-circle"></i> <strong>@Model.MensajeConfirmacion</strong>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* Sección de turnos reservados - Solo para pacientes *@
+        @if (Model.TipoUsuario == TipoUsuarioDto.PACIENTE && Model.TurnosPaciente != null && Model.TurnosPaciente.Any())
+        {
+            <div class="row px-xl-5 mb-3">
+                <div class="col">
+                    <div class="bg-white p-4 rounded shadow-sm">
+                        <h6 class="mb-3"><i class="fas fa-calendar-check text-primary"></i> Mis Turnos Reservados</h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover mb-0">
+                                <thead class="bg-primary text-white">
+                                    <tr>
+                                        <th>Médico</th>
+                                        <th>Especialidad</th>
+                                        <th>Fecha y Hora</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var turno in Model.TurnosPaciente.OrderBy(t => t.FechaTurno))
+                                    {
+                                        var esPasado = turno.FechaTurno < DateTime.Now;
+                                        <tr class="@(esPasado ? "table-secondary" : "")">
+                                            <td>@turno.Medico?.Nombre @turno.Medico?.Apellido</td>
+                                            <td>@turno.Medico?.Especialidad?.Nombre</td>
+                                            <td>@turno.FechaTurno?.ToString("dd/MM/yyyy HH:mm")</td>
+                                            <td>
+                                                @if (esPasado)
+                                                {
+                                                    <span class="badge badge-secondary">Pasado</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge badge-success">Pendiente</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="bg-light p-30 mb-5">
+
+            @if (Model.RespuestaServidor != null && Model.RespuestaServidor.IsFailure)
+            {
+                <div class="row">
+                    <div class="col-12 form-group">
+                        <div class="alert alert-danger text-center" role="alert">
+                            <strong>Error:</strong> @Model.RespuestaServidor.GetErrorsAsString()
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @* Mostrar errores de validación *@
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="row">
+                    <div class="col-12 form-group">
+                        <div class="alert alert-warning" role="alert">
+                            <strong>Errores de validación:</strong>
+                            <ul>
+                                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                {
+                                    <li>@error.ErrorMessage</li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="row">
+                @if (Model.TipoUsuario == TipoUsuarioDto.ADMINISTRADOR)
+                {
+                    <div class="col-md-6 form-group">
+                        <label for="Turno_TurnoId" class="font-weight-bold">Código:</label>
+                        @Html.TextBoxFor(
+                            model => model.Turno.TurnoId,
+                            new
+                            {
+                                @class = "form-control",
+                                @readonly = Model.TipoOperacion == TipoOperacion.MODIFICAR ? "readonly" : null
+                            })
+                        @Html.ValidationMessageFor(model => model.Turno.TurnoId, "", new { @class = "help-block text-danger" })
+                    </div>
+
+                    <div class="col-md-6 form-group">
+                        <label for="Turno_PacienteId" class="font-weight-bold">Paciente:</label>
+                        @Html.DropDownListFor(
+                            model => model.Turno.PacienteId,
+                            new SelectList(Model.Pacientes, "PacienteId", "Nombre"),
+                            "-- Seleccionar Paciente --",
+                            new { @class = "form-control" })
+                        @Html.ValidationMessageFor(model => model.Turno.PacienteId, "", new { @class = "help-block text-danger" })
+                    </div>
+                }
+                else
+                {
+                    @* Para pacientes, ocultar el campo PacienteId pero mantenerlo en el formulario *@
+                    <input type="hidden" name="Turno.PacienteId" value="@Model.Turno.PacienteId" />
+                }
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label for="especialidadSelect" class="font-weight-bold">Especialidad:</label>
+                    <select id="especialidadSelect" class="form-control">
+                        <option value="">-- Seleccionar Especialidad (Opcional) --</option>
+                        @foreach (var especialidad in Model.Especialidades)
+                        {
+                            <option value="@especialidad.EspecialidadId">@especialidad.Nombre</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label for="Turno_MedicoId" class="font-weight-bold">Médico:</label>
+                    @Html.DropDownListFor(
+                        model => model.Turno.MedicoId,
+                        new SelectList(Model.Medicos, "MedicoId", "Nombre"),
+                        "-- Seleccionar Médico --",
+                        new { @class = "form-control", id = "medicoSelect" })
+                    @Html.ValidationMessageFor(model => model.Turno.MedicoId, "", new { @class = "help-block text-danger" })
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label for="Turno_FechaTurno" class="font-weight-bold">Fecha del Turno:</label>
+                    @Html.TextBoxFor(
+                        model => model.Turno.FechaTurno,
+                        new
+                        {
+                            @class = "form-control",
+                            @type = "datetime-local",
+                            @value = Model.Turno.FechaTurno.HasValue ? Model.Turno.FechaTurno.Value.ToString("yyyy-MM-ddTHH:mm") : ""
+                        })
+                    @Html.ValidationMessageFor(model => model.Turno.FechaTurno, "", new { @class = "help-block text-danger" })
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    @Html.HiddenFor(model => Model.Turno.TurnoId)
+                    @Html.HiddenFor(model => Model.TipoOperacion)
+                    <button class="btn btn-primary py-2 px-4 mr-2" type="submit" id="sendMessageButton">
+                        @(Model.TipoUsuario == TipoUsuarioDto.PACIENTE ? "Reservar" : "Guardar")
+                    </button>
+                    @if (Model.TipoUsuario == TipoUsuarioDto.ADMINISTRADOR)
+                    {
+                        <a class="btn btn-secondary py-2 px-4 mr-2" asp-area="" asp-controller="Turno" asp-action="Index">Atrás</a>
+                    }
+                    else
+                    {
+                        <a class="btn btn-secondary py-2 px-4 mr-2" asp-area="" asp-controller="Home" asp-action="Index">Cancelar</a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<script>
+    $(document).ready(function () {
+        // Debug: Ver valor inicial de PacienteId
+        console.log('=== VALOR INICIAL ===');
+        console.log('PacienteId al cargar:', $('[name="Turno.PacienteId"]').val());
+        console.log('Valor del modelo:', '@Model.Turno.PacienteId');
+        console.log('TipoUsuario:', '@Model.TipoUsuario');
+
+        // Debug: Ver qué se envía al hacer submit
+        $('#gestionarTurnoForm').on('submit', function(e) {
+            console.log('=== DATOS DEL FORMULARIO ===');
+            console.log('PacienteId:', $('[name="Turno.PacienteId"]').val());
+            console.log('MedicoId:', $('[name="Turno.MedicoId"]').val());
+            console.log('FechaTurno:', $('[name="Turno.FechaTurno"]').val());
+            console.log('TipoOperacion:', $('[name="TipoOperacion"]').val());
+        });
+
+        // Cargar los médicos según la especialidad seleccionada
+        $('#especialidadSelect').on('change', function () {
+            const especialidadId = $(this).val();
+
+            if (especialidadId) {
+                $.ajax({
+                    url: '/Turno/ObtenerMedicosPorEspecialidad',
+                    type: 'GET',
+                    data: { especialidadId: especialidadId },
+                    success: function (data) {
+                        const medicoSelect = $('#medicoSelect');
+                        medicoSelect.empty();
+                        medicoSelect.append('<option value="">-- Seleccionar Médico --</option>');
+
+                        if (data && data.length > 0) {
+                            $.each(data, function (index, medico) {
+                                const nombreCompleto = medico.nombre + ' ' + medico.apellido;
+                                medicoSelect.append(
+                                    `<option value="${medico.medicoId}">${nombreCompleto}</option>`
+                                );
+                            });
+                        } else {
+                            medicoSelect.append('<option value="">No hay médicos disponibles</option>');
+                        }
+                    },
+                    error: function () {
+                        console.error('Error al obtener médicos');
+                        alert('Error al cargar los médicos. Intente de nuevo.');
+                    }
+                });
+            } else {
+                // Si se deja vacía, mostrar todos los médicos
+                const medicoSelect = $('#medicoSelect');
+                medicoSelect.empty();
+                medicoSelect.append('<option value="">-- Seleccionar Médico --</option>');
+                @foreach (var medico in Model.Medicos)
+                {
+                    <text>
+                        medicoSelect.append(`<option value="@medico.MedicoId">@medico.Nombre @medico.Apellido</option>`);
+                    </text>
+                }
+            }
+        });
+
+        // Validar que la fecha no sea en el pasado
+        $('#Turno_FechaTurno').on('change', function () {
+            const fechaSeleccionada = new Date($(this).val());
+            const ahora = new Date();
+
+            if (fechaSeleccionada <= ahora) {
+                alert('La fecha del turno debe ser posterior a la fecha y hora actual.');
+                $(this).val('');
+            }
+        });
+
+        // Inicializar la fecha
+        const fechaTurno = '@Model.Turno.FechaTurno?.ToString("yyyy-MM-ddTHH:mm")';
+        if (fechaTurno) {
+            $('#Turno_FechaTurno').val(fechaTurno);
+        }
+
+        // Cargar médicos si hay una especialidad pre-seleccionada
+        const especialidadSeleccionada = $('#especialidadSelect').val();
+        if (especialidadSeleccionada) {
+            $('#especialidadSelect').trigger('change');
+        }
+    });
+</script>

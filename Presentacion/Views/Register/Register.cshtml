@@ -1,0 +1,140 @@
+@model Presentacion.Models.RegisterViewModel
+@{
+    ViewData["Title"] = "Registro de Usuarios";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Crear Nueva Cuenta</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Register" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <!-- Campos Comunes -->
+                        <div class="form-group">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" placeholder="correo@ejemplo.com" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Username" class="form-label"></label>
+                            <input asp-for="Username" class="form-control" placeholder="usuario123" />
+                            <span asp-validation-for="Username" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Password" class="form-label"></label>
+                            <input asp-for="Password" class="form-control" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="ConfirmPassword" class="form-label"></label>
+                            <input asp-for="ConfirmPassword" class="form-control" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <!-- Tipo de Usuario -->
+                        <div class="form-group">
+                            <label asp-for="TipoUsuario" class="form-label"></label>
+                            <select asp-for="TipoUsuario" class="form-control" id="tipoUsuarioSelect">
+                                <option value="">-- Selecciona un tipo --</option>
+                                <option value="2">Médico</option>
+                                <option value="3">Paciente</option>
+                            </select>
+                            <span asp-validation-for="TipoUsuario" class="text-danger"></span>
+                        </div>
+
+                        <!-- Sección Paciente (Dinámico) -->
+                        <div id="seccionPaciente" style="display: none;">
+                            <hr />
+                            <h5 class="mb-3">Datos del Paciente</h5>
+
+                            <div class="form-group">
+                                <label asp-for="DocumentoPaciente" class="form-label"></label>
+                                <input asp-for="DocumentoPaciente" class="form-control" placeholder="DNI o cédula" />
+                                <span asp-validation-for="DocumentoPaciente" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label asp-for="ApellidoPaciente" class="form-label"></label>
+                                <input asp-for="ApellidoPaciente" class="form-control" placeholder="Apellido" />
+                                <span asp-validation-for="ApellidoPaciente" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label asp-for="NombrePaciente" class="form-label"></label>
+                                <input asp-for="NombrePaciente" class="form-control" placeholder="Nombre" />
+                                <span asp-validation-for="NombrePaciente" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <!-- Sección Médico (Dinámico) -->
+                        <div id="seccionMedico" style="display: none;">
+                            <hr />
+                            <h5 class="mb-3">Datos del Médico</h5>
+
+                            <div class="form-group">
+                                <label asp-for="MatriculaMedico" class="form-label"></label>
+                                <input asp-for="MatriculaMedico" class="form-control" placeholder="Matrícula profesional" />
+                                <span asp-validation-for="MatriculaMedico" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label asp-for="ApellidoMedico" class="form-label"></label>
+                                <input asp-for="ApellidoMedico" class="form-control" placeholder="Apellido" />
+                                <span asp-validation-for="ApellidoMedico" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label asp-for="NombreMedico" class="form-label"></label>
+                                <input asp-for="NombreMedico" class="form-control" placeholder="Nombre" />
+                                <span asp-validation-for="NombreMedico" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label asp-for="EspecialidadId" class="form-label"></label>
+                                <select asp-for="EspecialidadId" class="form-control">
+                                    <option value="">-- Selecciona una especialidad --</option>
+                                    @foreach (var especialidad in Model.Especialidades)
+                                    {
+                                        <option value="@especialidad.EspecialidadId">@especialidad.Nombre</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="EspecialidadId" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary btn-block">Registrarse</button>
+                        </div>
+
+                        <div class="text-center">
+                            <p class="mb-0">¿Ya tienes cuenta? <a asp-controller="Login" asp-action="Index">Inicia sesión aquí</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script src="~/js/register.js"></script>
+    <script>
+        // Inicializar el formulario dinámico cuando el DOM está listo
+        document.addEventListener('DOMContentLoaded', function () {
+            InitializeRegistrationForm('tipoUsuarioSelect');
+        });
+    </script>
+}

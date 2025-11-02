@@ -1,0 +1,274 @@
+﻿@using Presentacion.Core.DTOs
+@inject IHttpContextAccessor _httpContextAccessor
+@{
+    string nombreUsuario = _httpContextAccessor.HttpContext?.Session.GetString("Sesion_UsuarioNombre");
+    var tipoUsuarioInt = _httpContextAccessor.HttpContext?.Session.GetInt32("Sesion_UsuarioTipo");
+    TipoUsuarioDto tipoUsuario = tipoUsuarioInt.HasValue ? (TipoUsuarioDto)tipoUsuarioInt.Value : TipoUsuarioDto.PACIENTE;
+}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+
+    <!-- Favicon -->
+    <link href="img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="~/lib/animate/animate.min.css" rel="stylesheet">
+    <link href="~/lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="~/css/style.css" rel="stylesheet">
+
+    <!-- Customized Personal Stylesheet -->
+    <link href="~/css/mainstyle.css" rel="stylesheet">
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/easing/easing.min.js"></script>
+    <script src="~/lib/owlcarousel/owl.carousel.min.js"></script>
+
+    <!-- Bootstrap Table JS -->
+    <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+
+    <!-- Template Javascript -->
+    <script src="~/js/main.js"></script>
+    <script src="~/js/site.js"></script>
+</head>
+<body>
+    <header>
+        <!-- Topbar Start -->
+        <div class="text-center">
+            <div class="row align-items-center bg-light py-3 px-xl-5 d-none d-lg-flex">
+                <div class="col">
+                    <a href="" class="text-decoration-none">
+                        <span class="h1 text-uppercase text-dark bg-primary px-2 ml-n1">SUPER REMINDER</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- Topbar End -->
+        <!-- Header Start -->
+        <div class="container-fluid bg-dark mb-30">
+            <div class="row px-xl-5">
+                <div class="col">
+                    <nav class="navbar navbar-expand-lg bg-dark navbar-dark py-3 py-lg-0 px-0">
+                        <a href="" class="text-decoration-none d-block d-lg-none">
+                            <span class="h1 text-uppercase text-light bg-primary px-2 ml-n1">SUPER REMINDER</span>
+                        </a>
+                        <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                        <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
+                            <div class="navbar-nav mr-auto py-0">
+                                <a class="nav-item nav-link active" asp-area="" asp-controller="Home" asp-action="Index">HOME</a>
+
+                                @if (tipoUsuario == TipoUsuarioDto.ADMINISTRADOR || tipoUsuario == TipoUsuarioDto.MEDICO)
+                                {
+                                    <a class="nav-item nav-link active" asp-area="" asp-controller="Paciente" asp-action="index">PACIENTES</a>
+                                }
+
+                                @if (tipoUsuario == TipoUsuarioDto.ADMINISTRADOR)
+                                {
+                                    <a class="nav-item nav-link active" asp-area="" asp-controller="Medico" asp-action="index">MÉDICOS</a>
+                                }
+
+                                @if (tipoUsuario == TipoUsuarioDto.ADMINISTRADOR || tipoUsuario == TipoUsuarioDto.MEDICO)
+                                {
+                                    <a class="nav-item nav-link active" asp-area="" asp-controller="Farmaco" asp-action="index">FÁRMACOS</a>
+                                }
+
+                                @if (tipoUsuario == TipoUsuarioDto.ADMINISTRADOR || tipoUsuario == TipoUsuarioDto.MEDICO || tipoUsuario == TipoUsuarioDto.PACIENTE)
+                                {
+                                    <a class="nav-item nav-link active" asp-area="" asp-controller="OrdenMedica" asp-action="index">ORDENES MÉDICAS</a>
+                                }
+
+                                @if (tipoUsuario == TipoUsuarioDto.ADMINISTRADOR || tipoUsuario == TipoUsuarioDto.PACIENTE)
+                                {
+                                    <a class="nav-item nav-link active" asp-area="" asp-controller="Turno" asp-action="index">TURNOS</a>
+                                }
+
+                                @if (tipoUsuario == TipoUsuarioDto.ADMINISTRADOR)
+                                {
+                                    <a class="nav-item nav-link active" asp-area="" asp-controller="Usuario" asp-action="index">USUARIOS</a>
+                                }
+                            </div>
+                            <div class="navbar d-flex justify-content-center">
+                                <div class="navbar-nav py-0 d-flex align-items-center flex-row">
+                                    <span class="navbar-text me-2 pr-2">
+                                        @nombreUsuario
+                                    </span>
+                                    <a asp-controller="Login" asp-action="Logout" class="btn px-0 ms-2">
+                                        <i class="fas fa-power-off text-primary"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+        <!-- Header End -->
+    </header>
+
+    <!-- Content Start -->
+    <div class="container">
+        <main role="main" class="pb-3">
+            @Html.Partial("~/Views/Shared/Partials/_ToastMessagePartial.cshtml")
+            @RenderBody()
+        </main>
+    </div>
+    <!-- Content End -->
+    <!-- Footer Start -->
+    <footer class="footer-modern bg-dark text-light mt-5 pt-5 pb-4">
+        <div class="container">
+            <div class="row">
+                <!-- Columna 1: Logo y Descripción -->
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="footer-logo mb-3">
+                        <h4 class="text-primary mb-3">
+                            <i class="fas fa-heartbeat"></i> SUPER REMINDER
+                        </h4>
+                    </div>
+                    <p class="text-muted small">
+                        Sistema integral de gestión médica para el control y seguimiento de tratamientos y órdenes médicas.
+                    </p>
+                    <div class="social-links mt-3">
+                        <a href="#" class="text-light me-3"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-light me-3"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-light me-3"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#" class="text-light"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+
+                <!-- Columna 2: Enlaces Rápidos -->
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <h5 class="text-primary mb-3">Enlaces Rápidos</h5>
+                    <ul class="list-unstyled footer-links">
+                        <li><a asp-controller="Home" asp-action="Index" class="text-muted"><i class="fas fa-angle-right me-2"></i>Inicio</a></li>
+                        <li><a asp-controller="Home" asp-action="Nosotros" class="text-muted"><i class="fas fa-angle-right me-2"></i>Nosotros</a></li>
+                        <li><a asp-controller="Paciente" asp-action="Index" class="text-muted"><i class="fas fa-angle-right me-2"></i>Pacientes</a></li>
+                        <li><a asp-controller="Medico" asp-action="Index" class="text-muted"><i class="fas fa-angle-right me-2"></i>Médicos</a></li>
+                        <li><a asp-controller="OrdenMedica" asp-action="Index" class="text-muted"><i class="fas fa-angle-right me-2"></i>Órdenes Médicas</a></li>
+                    </ul>
+                </div>
+
+                <!-- Columna 3: Servicios -->
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <h5 class="text-primary mb-3">Servicios</h5>
+                    <ul class="list-unstyled footer-links">
+                        <li><a href="#" class="text-muted"><i class="fas fa-angle-right me-2"></i>Gestión de Pacientes</a></li>
+                        <li><a href="#" class="text-muted"><i class="fas fa-angle-right me-2"></i>Control de Medicamentos</a></li>
+                        <li><a href="#" class="text-muted"><i class="fas fa-angle-right me-2"></i>Órdenes Médicas</a></li>
+                        <li><a href="#" class="text-muted"><i class="fas fa-angle-right me-2"></i>Reportes y Estadísticas</a></li>
+                        <li><a href="#" class="text-muted"><i class="fas fa-angle-right me-2"></i>Soporte 24/7</a></li>
+                    </ul>
+                </div>
+
+                <!-- Columna 4: Contacto -->
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <h5 class="text-primary mb-3">Contacto</h5>
+                    <ul class="list-unstyled footer-contact">
+                        <li class="mb-2">
+                            <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                            <span class="text-muted small">Buenos Aires, Argentina</span>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-phone-alt text-primary me-2"></i>
+                            <span class="text-muted small">+54 11 1234-5678</span>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-envelope text-primary me-2"></i>
+                            <span class="text-muted small">info@superreminder.com</span>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-clock text-primary me-2"></i>
+                            <span class="text-muted small">Lun - Vie: 9:00 - 18:00</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Línea divisoria -->
+            <hr class="bg-secondary my-4">
+
+            <!-- Copyright -->
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="text-muted small mb-0">
+                        &copy; 2025 <span class="text-primary">Sistema Rimander</span> - Rojas & Domínguez. Todos los derechos reservados.
+                    </p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <p class="text-muted small mb-0">
+                        <a href="#" class="text-muted me-3">Términos de Uso</a>
+                        <a href="#" class="text-muted me-3">Privacidad</a>
+                        <a href="#" class="text-muted">Ayuda</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- Footer End -->
+
+    <style>
+        .footer-modern {
+            background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
+        }
+
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+
+        .footer-links a {
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            color: var(--bs-primary) !important;
+            padding-left: 5px;
+        }
+
+        .footer-contact li {
+            display: flex;
+            align-items: start;
+        }
+
+        .social-links a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .social-links a:hover {
+            background-color: var(--bs-primary);
+            transform: translateY(-3px);
+        }
+
+        .footer-logo h4 {
+            font-weight: 700;
+        }
+    </style>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+
+</html>

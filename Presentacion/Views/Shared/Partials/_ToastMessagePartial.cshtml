@@ -1,0 +1,42 @@
+﻿<!--
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+    <div class="toast align-items-center text-white border-0" id="toast-message-head" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toast-message-text">
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+-->
+
+<div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="errorModalLabel">Error</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="errorMessage">This is a customizable error message.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    function showErrorModal(message) {
+        $('#errorMessage').text(message);
+        $('#errorModal').modal('show');
+
+        setTimeout(function () {
+            $('#errorModal').modal('hide');
+        }, 6000);
+    }
+</script>

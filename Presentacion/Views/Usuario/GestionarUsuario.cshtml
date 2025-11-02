@@ -1,0 +1,95 @@
+﻿@using Presentacion.Core
+@model GestionarUsuarioViewModel
+@{
+    ViewData["Title"] = "Gestión Usuario";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@using (Html.BeginForm("GestionarUsuario", "Usuario", FormMethod.Post, new { id = "agregarUsuarioForm" }))
+{
+    <div class="container-fluid">
+        <div class="row px-xl-5">
+            <div class="col">
+                <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">@Model.TipoOperacion</span></h5>
+            </div>
+        </div>
+        <div class="bg-light p-30 mb-5">
+
+            @if (Model.RespuestaServidor.IsFailure)
+            {
+                <div class="row">
+                    <div class="col-12 form-group">
+                        <div class="alert alert-danger text-center" role="alert">
+                            <strong>Error:</strong> @Model.RespuestaServidor.GetErrorsAsString()
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label for="Usuario" class="font-weight-bold">Codigo:</label>
+                    @Html.TextBoxFor(
+                             model => model.Usuario.UsuarioId,
+                             new
+                             {
+                                 @class = "form-control",
+                                 @readonly = Model.TipoOperacion == TipoOperacion.MODIFICAR ? "readonly" : null
+                             })
+                    @Html.ValidationMessageFor(model => model.Usuario.UsuarioId, "", new { @class = "help-block text-danger" })
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label for="Nombre" class="font-weight-bold">Nombre Usuario:</label>
+                    @Html.TextBoxFor(model => 
+                        model.Usuario.Nombre,
+                        Model.TipoOperacion == TipoOperacion.MODIFICAR
+                             ? new { @class = "form-control", @readonly = "readonly" }
+                             : new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.Usuario.Nombre, "", new { @class = "help-block text-danger" })
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label for="Contrasena" class="font-weight-bold">Contraseña:</label>
+                    @Html.PasswordFor(model => model.Usuario.Contrasena, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.Usuario.Contrasena, "", new { @class = "help-block text-danger" })
+                    @Html.HiddenFor(model => model.Usuario.Contrasena)
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label for="TipoUsuario" class="font-weight-bold">Tipo Usuario:</label>
+                    @Html.DropDownListFor(
+                             model => model.Usuario.TipoUsuario,
+                             new SelectList(Model.TiposUsuario),
+                             new
+                             {
+                                 @class = "form-control",
+                                 @readonly = Model.TipoOperacion == TipoOperacion.MODIFICAR ? "readonly" : null
+                             })
+                    @Html.ValidationMessageFor(model => model.Usuario.TipoUsuario, "", new { @class = "help-block text-danger" })
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label for="Bloqueado">ACTIVO:</label>
+                    @Html.DropDownListFor(
+                        model => model.Usuario.Activo,
+                        new SelectList(new[]
+                        {
+                            new SelectListItem { Text = "SI", Value = "true" },
+                            new SelectListItem { Text = "NO", Value = "false" }
+                        }, "Value", "Text"), new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.Usuario.Activo, "", new { @class = "text-danger font-weight-bold small" })
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    @Html.HiddenFor(model => Model.Usuario.UsuarioId)
+                    @Html.HiddenFor(model => Model.TipoOperacion)
+                    <button class="btn btn-primary py-2 px-4 mr-2" type="submit" id="sendMessageButton"> Guardar </button>
+                    <a class="btn btn-secondary py-2 px-4 mr-2" asp-area="" asp-controller="Usuario" asp-action="Index">Atrás</a>
+                </div>
+            </div>
+        </div>
+    </div>
+}

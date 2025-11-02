@@ -1,0 +1,102 @@
+﻿<!DOCTYPE html>
+<html lang="en" style="height: 100%;">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+
+    <!-- Favicon -->
+    <link href="img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="~/lib/animate/animate.min.css" rel="stylesheet">
+    <link href="~/lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="~/css/style.css" rel="stylesheet">
+
+    <!-- Customized Personal Stylesheet -->
+    <link href="~/css/mainstyle.css" rel="stylesheet">
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/easing/easing.min.js"></script>
+    <script src="~/lib/owlcarousel/owl.carousel.min.js"></script>
+
+    <!-- Bootstrap Table JS -->
+    <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+
+    <!-- Template Javascript -->
+    <script src="~/js/main.js"></script>
+    <script src="~/js/site.js"></script>
+</head>
+<body style="min-height: 100%; display: flex; flex-direction: column;">
+    <header>
+        <!-- Topbar Start -->
+        <div class="text-center">
+            <div class="row align-items-center bg-light py-3 px-xl-5 d-none d-lg-flex">
+                <div class="col">
+                    <a href="" class="text-decoration-none">
+                        <span class="h1 text-uppercase text-dark bg-primary px-2 ml-n1">SUPER REMINDER</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- Topbar End -->
+        <!-- Header Start -->
+        <div class="container-fluid bg-dark mb-30">
+            <div class="row px-xl-5">
+                <div class="col">
+                    <nav class="navbar navbar-expand-lg bg-dark navbar-dark py-3 py-lg-0 px-0">
+                        <a href="" class="text-decoration-none d-block d-lg-none">
+                            <span class="h1 text-uppercase text-light bg-primary px-2 ml-n1">SUPER REMINDER</span>
+                        </a>
+                        <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                        <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
+                            <div class="navbar-nav mr-auto py-0">
+                                <a class="nav-item nav-link" href="@Url.Action("Index", "Login")">LOGIN</a>
+                                <a class="nav-item nav-link" href="@Url.Action("Contacto", "Home")">CONTACTO</a>
+                                <a class="nav-item nav-link" href="@Url.Action("Nosotros", "Home")">NOSOTROS</a>
+                                <a class="nav-item nav-link" href="@Url.Action("AcercaDe", "Home")">Acerca de</a>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+        <!-- Header End -->
+    </header>
+
+    <!-- Content Start -->
+    <div class="container" style="flex: 1;">
+        <main role="main" class="pb-3">
+            @Html.Partial("~/Views/Shared/Partials/_ToastMessagePartial.cshtml")
+            @RenderBody()
+        </main>
+    </div>
+    <!-- Content End -->
+    <!-- Footer Start -->
+    <div class="container-fluid bg-dark text-secondary pt-2" style="margin-top: auto;">
+        <div class="row mx-xl-5 py-4" style="border-color: rgba(256, 256, 256, .1) !important;">
+            <div class="col">
+                <div class="text-center">
+                    Sistema Web Gestión Medica - Rojas & Dominguez
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Footer End -->
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+
+</html>

@@ -1,0 +1,114 @@
+﻿@using Presentacion.Core
+@using Presentacion.Core.DTOs
+@model GestionarPacienteViewModel
+@{
+    ViewData["Title"] = "Gestión Paciente";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@using (Html.BeginForm("GestionarPaciente", "Paciente", FormMethod.Post, new { id = "agregarPacienteForm" }))
+{
+    <div class="container-fluid">
+        <div class="row px-xl-5">
+            <div class="col">
+                <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">@Model.TipoOperacion</span></h5>
+            </div>
+        </div>
+        <div class="bg-light p-30 mb-5">
+
+            @if (Model.RespuestaServidor.IsFailure)
+            {
+                <div class="row">
+                    <div class="col-12 form-group">
+                        <div class="alert alert-danger text-center" role="alert">
+                            <strong>Error:</strong> @Model.RespuestaServidor.GetErrorsAsString()
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label for="Paciente" class="font-weight-bold">Codigo:</label>
+                    @Html.TextBoxFor(
+                             model => model.Paciente.PacienteId,
+                             new
+                             {
+                                 @class = "form-control",
+                                 @readonly = Model.TipoOperacion == TipoOperacion.MODIFICAR ? "readonly" : null
+                             })
+                    @Html.ValidationMessageFor(model => model.Paciente.PacienteId, "", new { @class = "help-block text-danger" })
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label for="Documento" class="font-weight-bold">Documento:</label>
+                    @Html.TextBoxFor(
+                             model => model.Paciente.Documento,
+                             Model.TipoOperacion == TipoOperacion.MODIFICAR
+                             ? new { @class = "form-control", @readonly = "readonly" }
+                             : new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.Paciente.Documento, "", new { @class = "help-block text-danger" })
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label for="Apellido" class="font-weight-bold">Apellido:</label>
+                    @Html.TextBoxFor(model => model.Paciente.Apellido, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.Paciente.Apellido, "", new { @class = "help-block text-danger" })
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label for="Nombre" class="font-weight-bold">Nombre:</label>
+                    @Html.TextBoxFor(model => model.Paciente.Nombre, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.Paciente.Nombre, "", new { @class = "help-block text-danger" })
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label for="Fecha Nacimiento" class="font-weight-bold">Fecha Nacimiento:</label>
+                    @Html.TextBoxFor(
+                             model => model.Paciente.FechaNacimiento,
+                             new
+                             {
+                                 @class = "form-control",
+                                 @type = "date",
+                                 @value = Model.Paciente.FechaNacimiento.HasValue ? Model.Paciente.FechaNacimiento.Value.ToString("yyyy-MM-dd") : ""
+                             }
+                             )
+                    @Html.ValidationMessageFor(model => model.Paciente.FechaNacimiento, "", new { @class = "help-block text-danger" })
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    @Html.HiddenFor(model => Model.Paciente.PacienteId)
+                    @Html.HiddenFor(model => Model.TipoOperacion)
+                    <button class="btn btn-primary py-2 px-4 mr-2" type="submit" id="sendMessageButton"> Guardar </button>
+                    <a class="btn btn-secondary py-2 px-4 mr-2" asp-area="" asp-controller="Paciente" asp-action="Index">Atrás</a>
+                    @if (Model.TipoUsuario == TipoUsuarioDto.MEDICO && Model.TipoOperacion == TipoOperacion.MODIFICAR && Model.Paciente.PacienteId > 0)
+                    {
+                        <button type="button" class="btn btn-success py-2 px-4" id="btnAgregarOrdenMedica" onclick="crearOrdenMedica()">
+                            <i class="fas fa-plus"></i> Agregar Orden Médica
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<script>
+    $(document).ready(function () {
+        var fechaNacimiento = '@Model.Paciente.FechaNacimiento?.ToString("yyyy-MM-dd")';
+
+        if (fechaNacimiento) {
+            $('#Paciente_FechaNacimiento').val(fechaNacimiento);
+        }
+    });
+
+    function crearOrdenMedica() {
+        const pacienteId = '@Model.Paciente.PacienteId';
+        const pacienteNombre = '@Model.Paciente.Nombre';
+        const pacienteApellido = '@Model.Paciente.Apellido';
+
+        // Redirigir al formulario de crear orden médica con el paciente pre-seleccionado
+        window.location.href = `/OrdenMedica/GestionarOrdenMedica?pacienteId=${pacienteId}&tipoOperacion=AGREGAR`;
+    }
+</script>

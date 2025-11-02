@@ -1,0 +1,153 @@
+@model Presentacion.Models.CompleteGoogleRegistrationViewModel
+@{
+    ViewData["Title"] = "Completar Registro";
+    Layout = "~/Views/Shared/_LayoutLogin.cshtml";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="text-center mb-4">Completar Registro con Google</h3>
+                    <p class="text-center text-muted mb-4">
+                        <i class="fab fa-google text-danger"></i> Has iniciado sesión con Google exitosamente.
+                        <br />Por favor, completa tu información para finalizar el registro.
+                    </p>
+
+                    @using (Html.BeginForm("CompleteGoogleRegistration", "Register", FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label">Email (desde Google)</label>
+                            <input asp-for="Email" class="form-control" readonly />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Username" class="form-label">Nombre de Usuario</label>
+                            <input asp-for="Username" class="form-control" placeholder="Elige un nombre de usuario único" />
+                            <small class="form-text text-muted">Este será tu nombre de usuario para iniciar sesión</small>
+                            <span asp-validation-for="Username" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label">Contraseña</label>
+                            <input asp-for="Password" class="form-control" type="password" placeholder="Crea una contraseña segura" />
+                            <small class="form-text text-muted">Mínimo 6 caracteres</small>
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ConfirmPassword" class="form-label">Confirmar Contraseña</label>
+                            <input asp-for="ConfirmPassword" class="form-control" type="password" placeholder="Confirma tu contraseña" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="TipoUsuario" class="form-label">Tipo de Usuario</label>
+                            <select asp-for="TipoUsuario" class="form-control" id="tipoUsuarioSelect">
+                                <option value="">-- Selecciona tu rol --</option>
+                                @foreach (var tipo in Model.TiposUsuario)
+                                {
+                                    <option value="@tipo">@tipo</option>
+                                }
+                            </select>
+                            <span asp-validation-for="TipoUsuario" class="text-danger"></span>
+                        </div>
+
+                        <!-- Sección Paciente (Dinámico) -->
+                        <div id="seccionPaciente" style="display: none;">
+                            <hr />
+                            <h5 class="mb-3">Datos del Paciente</h5>
+
+                            <div class="mb-3">
+                                <label asp-for="DocumentoPaciente" class="form-label">Documento</label>
+                                <input asp-for="DocumentoPaciente" class="form-control" placeholder="DNI o cédula" />
+                                <span asp-validation-for="DocumentoPaciente" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="ApellidoPaciente" class="form-label">Apellido</label>
+                                <input asp-for="ApellidoPaciente" class="form-control" placeholder="Apellido" />
+                                <span asp-validation-for="ApellidoPaciente" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="NombrePaciente" class="form-label">Nombre</label>
+                                <input asp-for="NombrePaciente" class="form-control" placeholder="Nombre" />
+                                <span asp-validation-for="NombrePaciente" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="FechaNacimientoPaciente" class="form-label">Fecha de Nacimiento</label>
+                                <input asp-for="FechaNacimientoPaciente" class="form-control" type="date" />
+                                <span asp-validation-for="FechaNacimientoPaciente" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <!-- Sección Médico (Dinámico) -->
+                        <div id="seccionMedico" style="display: none;">
+                            <hr />
+                            <h5 class="mb-3">Datos del Médico</h5>
+
+                            <div class="mb-3">
+                                <label asp-for="MatriculaMedico" class="form-label">Matrícula</label>
+                                <input asp-for="MatriculaMedico" class="form-control" placeholder="Matrícula profesional" />
+                                <span asp-validation-for="MatriculaMedico" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="ApellidoMedico" class="form-label">Apellido</label>
+                                <input asp-for="ApellidoMedico" class="form-control" placeholder="Apellido" />
+                                <span asp-validation-for="ApellidoMedico" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="NombreMedico" class="form-label">Nombre</label>
+                                <input asp-for="NombreMedico" class="form-control" placeholder="Nombre" />
+                                <span asp-validation-for="NombreMedico" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="EspecialidadId" class="form-label">Especialidad</label>
+                                <select asp-for="EspecialidadId" class="form-control">
+                                    <option value="">-- Selecciona una especialidad --</option>
+                                    @foreach (var especialidad in Model.Especialidades)
+                                    {
+                                        <option value="@especialidad.EspecialidadId">@especialidad.Nombre</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="EspecialidadId" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 mt-3">
+                            <i class="fas fa-check-circle"></i> Completar Registro
+                        </button>
+
+                        <div class="text-center mt-3">
+                            <a asp-controller="Login" asp-action="Index" class="btn btn-link">
+                                <i class="fas fa-arrow-left"></i> Cancelar y volver al login
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script src="~/js/register.js"></script>
+    <script>
+        // Inicializar el formulario dinámico cuando el DOM está listo
+        document.addEventListener('DOMContentLoaded', function () {
+            InitializeRegistrationForm('tipoUsuarioSelect');
+        });
+    </script>
+}

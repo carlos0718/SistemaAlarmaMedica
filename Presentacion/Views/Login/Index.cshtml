@@ -1,0 +1,78 @@
+﻿@using Presentacion.Core
+@{
+    ViewData["Title"] = "Login";
+    Layout = "~/Views/Shared/_LayoutLogin.cshtml";
+}
+
+@using (Html.BeginForm("Index", "Login", FormMethod.Post))
+{
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="text-center mb-4">Iniciar Sesión</h3>
+
+                        @if (TempData["SuccessMessage"] != null)
+                        {
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                @TempData["SuccessMessage"]
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(ViewBag.MensajeError))
+                        {
+                            <div class="alert alert-danger" role="alert">
+                                @ViewBag.MensajeError
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Nombre Usuario:</label>
+                            <input type="text" id="username" name="nombre" value="" class="form-control" required>
+                            <div class="invalid-feedback">Por favor, ingresa tu nombre de usuario.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Contraseña:</label>
+                            <input type="password" id="password" name="contrasena" value="" class="form-control" required>
+                            <div class="invalid-feedback">Por favor, ingresa tu contraseña.</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Iniciar sesión</button>
+
+                        <div class="text-center my-3">
+                            <span class="text-muted">───────── o ─────────</span>
+                        </div>
+
+                        <a asp-controller="Login" asp-action="GoogleLogin" class="btn btn-google w-100">
+                            <i class="fab fa-google"></i> Continuar con Google
+                        </a>
+
+                        <style>
+                            .btn-google {
+                                background-color: #fff;
+                                color: #757575;
+                                border: 1px solid #ddd;
+                                padding: 10px;
+                                font-weight: 500;
+                                transition: all 0.3s ease;
+                            }
+
+                            .btn-google:hover {
+                                background-color: #f8f9fa;
+                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                color: #333;
+                            }
+
+                            .btn-google i {
+                                margin-right: 8px;
+                                color: #DB4437;
+                            }
+                        </style>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
