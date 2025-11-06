@@ -12,13 +12,16 @@ namespace Presentacion.Controllers
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IUsuarioServiceWeb _usuarioServiceWeb;
+        private readonly IMedicoServiceWeb _medicoServiceWeb;
 
         public LoginController(
             IHttpContextAccessor httpContextAccessor,
-            IUsuarioServiceWeb usuarioServiceWeb)
+            IUsuarioServiceWeb usuarioServiceWeb,
+            IMedicoServiceWeb medicoServiceWeb)
         {
             _httpContextAccessor = httpContextAccessor;
             _usuarioServiceWeb = usuarioServiceWeb;
+            _medicoServiceWeb = medicoServiceWeb;
         }
 
         public IActionResult Index(string errorMessage = "")
@@ -49,10 +52,18 @@ namespace Presentacion.Controllers
                         _httpContextAccessor.HttpContext?.Session.SetInt32("Sesion_PacienteId", usuarioDto.PacienteId.Value);
                     }
 
-                    // Si es médico, guardar su MedicoId directamente desde el usuario
+                    // Si es médico, guardar su MedicoId y nombre
                     if (usuarioDto?.TipoUsuario == TipoUsuarioDto.MEDICO && usuarioDto.MedicoId.HasValue)
                     {
                         _httpContextAccessor.HttpContext?.Session.SetInt32("Sesion_MedicoId", usuarioDto.MedicoId.Value);
+
+                        // Obtener información del médico para guardar su nombre
+                        var medicoDto = await _medicoServiceWeb.ObtenerPorId(usuarioDto.MedicoId.Value);
+                        if (medicoDto != null)
+                        {
+                            var nombreMedicoCompleto = $"{medicoDto.Apellido}, {medicoDto.Nombre} || Matric: {medicoDto.Matricula}";
+                            _httpContextAccessor.HttpContext?.Session.SetString("Sesion_NombreMedico", nombreMedicoCompleto);
+                        }
                     }
 
                     return RedirectToAction("Index", "Home");
@@ -74,6 +85,9 @@ namespace Presentacion.Controllers
             _httpContextAccessor.HttpContext?.Session.Remove("Sesion_UsuarioId");
             _httpContextAccessor.HttpContext?.Session.Remove("Sesion_UsuarioNombre");
             _httpContextAccessor.HttpContext?.Session.Remove("Sesion_UsuarioTipo");
+            _httpContextAccessor.HttpContext?.Session.Remove("Sesion_PacienteId");
+            _httpContextAccessor.HttpContext?.Session.Remove("Sesion_MedicoId");
+            _httpContextAccessor.HttpContext?.Session.Remove("Sesion_NombreMedico");
             _httpContextAccessor.HttpContext?.Session.Remove("Timeout");
 
             return RedirectToAction("Index", "Login");
@@ -144,10 +158,18 @@ namespace Presentacion.Controllers
                         _httpContextAccessor.HttpContext?.Session.SetInt32("Sesion_PacienteId", usuario.PacienteId.Value);
                     }
 
-                    // Si es médico, guardar su MedicoId directamente desde el usuario
+                    // Si es médico, guardar su MedicoId y nombre
                     if (usuario?.TipoUsuario == TipoUsuarioDto.MEDICO && usuario.MedicoId.HasValue)
                     {
                         _httpContextAccessor.HttpContext?.Session.SetInt32("Sesion_MedicoId", usuario.MedicoId.Value);
+
+                        // Obtener información del médico para guardar su nombre
+                        var medicoDto = await _medicoServiceWeb.ObtenerPorId(usuario.MedicoId.Value);
+                        if (medicoDto != null)
+                        {
+                            var nombreMedicoCompleto = $"{medicoDto.Apellido}, {medicoDto.Nombre} || Matric: {medicoDto.Matricula}";
+                            _httpContextAccessor.HttpContext?.Session.SetString("Sesion_NombreMedico", nombreMedicoCompleto);
+                        }
                     }
 
                     return RedirectToAction("Index", "Home");

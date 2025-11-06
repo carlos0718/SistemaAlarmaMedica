@@ -39,22 +39,39 @@
                     @Html.ValidationMessageFor(model => model.OrdenMedica.OrdenMedicaId, "", new { @class = "help-block text-danger" })
                 </div>
 
-                <div class="col-md-6 form-group">
-                    <label for="MedicoId" class="font-weight-bold">Médico:</label>
-                    @Html.DropDownListFor(
-                                      model => model.OrdenMedica.MedicoId,
-                                      new SelectList(Model.Medicos, "MedicoId", "NombreCompleto"),
-                                      "-- Seleccionar Médico --",
-                                      new
-                                      {
-                                          @class = "form-control",
-                                          @readonly = Model.TipoOperacion == TipoOperacion.MODIFICAR ? "readonly" : null
-                                      })
-                    @Html.ValidationMessageFor(model => model.OrdenMedica.MedicoId, "", new { @class = "help-block text-danger" })
-                </div>
+                <!-- Sección de Médico: INPUT si es MÉDICO, SELECT si es ADMIN -->
+                @if (Model.TipoUsuario == Presentacion.Core.DTOs.TipoUsuarioDto.MEDICO)
+                {
+                    <div class="col-md-6 form-group">
+                        <label for="medicoInputReadonly" class="font-weight-bold">Médico:</label>
+                        <input type="text"
+                               class="form-control"
+                               id="medicoInputReadonly"
+                               value="@Model.NombreMedicoDelUsuario"
+                               readonly />
+                        @Html.HiddenFor(model => model.OrdenMedica.MedicoId)
+                    </div>
+                }
+                else
+                {
+                    <div class="col-md-6 form-group">
+                        <label for="medicoSelect" class="font-weight-bold">Médico:</label>
+                        @Html.DropDownListFor(
+                                              model => model.OrdenMedica.MedicoId,
+                                              new SelectList(Model.Medicos, "MedicoId", "NombreCompleto"),
+                                              "-- Seleccionar Médico --",
+                                              new
+                                              {
+                                                  @class = "form-control",
+                                                  id = "medicoSelect",
+                                                  @readonly = Model.TipoOperacion == TipoOperacion.MODIFICAR ? "readonly" : null
+                                              })
+                        @Html.ValidationMessageFor(model => model.OrdenMedica.MedicoId, "", new { @class = "help-block text-danger" })
+                    </div>
+                }
 
                 <div class="col-md-6 form-group">
-                    <label for="PacienteId" class="font-weight-bold">Paciente:</label>
+                    <label for="pacienteSelect" class="font-weight-bold">Paciente:</label>
                     @Html.DropDownListFor(
                                       model => model.OrdenMedica.PacienteId,
                                       new SelectList(Model.Pacientes, "PacienteId", "NombreCompleto"),
@@ -62,6 +79,7 @@
                                       new
                                       {
                                           @class = "form-control",
+                                          id = "pacienteSelect",
                                           @readonly = Model.TipoOperacion == TipoOperacion.MODIFICAR ? "readonly" : null
                                       })
                     @Html.ValidationMessageFor(model => model.OrdenMedica.PacienteId, "", new { @class = "help-block text-danger" })
@@ -218,6 +236,77 @@
 
     <script>
         $(document).ready(function () {
+
+            // Función para cargar pacientes por médico
+            function cargarPacientesPorMedico(medicoId) {
+                const pacienteSelect = $('#pacienteSelect');
+
+                if (medicoId) {
+                    // Llamar al controlador para obtener pacientes que tienen turnos con este médico
+                    $.ajax({
+                        url: `/Turno/ObtenerPacientesPorMedico`,
+                        data: { medicoId: medicoId },
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function (data) {
+                            console.log('Pacientes recibidos:', data);
+                            pacienteSelect.empty();
+                            pacienteSelect.append('<option value="">-- Seleccionar Paciente --</option>');
+
+                            if (data && data.length > 0) {
+                                data.forEach(paciente => {
+                                    // Maneja tanto PascalCase como camelCase
+                                    const pacienteId = paciente.PacienteId || paciente.pacienteId;
+                                    const apellido = paciente.Apellido || paciente.apellido || '';
+                                    const nombre = paciente.Nombre || paciente.nombre || '';
+                                    const documento = paciente.Documento || paciente.documento || '';
+
+                                    const nombreCompleto = `${apellido}, ${nombre} || Dni: ${documento}`;
+                                    console.log(`Agregando paciente: ${nombreCompleto} (ID: ${pacienteId})`);
+
+                                    pacienteSelect.append(
+                                        `<option value="${pacienteId}">${nombreCompleto}</option>`
+                                    );
+                                });
+                            } else {
+                                console.log('No se encontraron pacientes para este médico');
+                                pacienteSelect.append('<option value="" disabled>No hay pacientes con turnos para este médico</option>');
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('Error al llamar la API:', error);
+                            console.error('Status:', status);
+                            console.error('Response:', xhr.responseText);
+                            pacienteSelect.empty();
+                            pacienteSelect.append('<option value="">-- Error al cargar pacientes --</option>');
+                        }
+                    });
+                } else {
+                    // Si no hay médico seleccionado, mostrar vacío
+                    pacienteSelect.empty();
+                    pacienteSelect.append('<option value="">-- Seleccionar Paciente --</option>');
+                    console.log('Médico no seleccionado');
+                }
+            }
+
+            // Detectar si es usuario MÉDICO (solo hay input readonly, no select)
+            const esMedico = !$('#medicoSelect').length;
+
+            if (esMedico) {
+                // Si es médico, cargar pacientes automáticamente al cargar la página
+                const medicoIdHidden = $('input[name="OrdenMedica.MedicoId"]').val();
+                if (medicoIdHidden) {
+                    console.log('Cargando pacientes para médico ID:', medicoIdHidden);
+                    cargarPacientesPorMedico(medicoIdHidden);
+                }
+            } else {
+                // Si es ADMIN, escuchar cambios en el select de médico
+                $('#medicoSelect').on('change', function () {
+                    const medicoId = $(this).val();
+                    console.log('Cambio de médico detectado. Médico ID:', medicoId);
+                    cargarPacientesPorMedico(medicoId);
+                });
+            }
 
             function toggleInputs() {
                 const isUnicaAplicacion = $("#unicaAplicacion").is(":checked");

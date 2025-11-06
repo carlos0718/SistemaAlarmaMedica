@@ -19,6 +19,11 @@ namespace Presentacion.Models
         public List<string> ObrasSociales { get; set; }
         public ServiceResponse RespuestaServidor { get; set; }
 
+        // Propiedades para manejar el tipo de usuario
+        public TipoUsuarioDto TipoUsuario { get; set; }
+        public int? MedicoIdDelUsuario { get; set; }
+        public string? NombreMedicoDelUsuario { get; set; }
+
         public GestionarOrdenMedicaViewModel()
         {
             RespuestaServidor = new ServiceResponse();

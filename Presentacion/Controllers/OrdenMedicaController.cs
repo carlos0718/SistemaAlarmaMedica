@@ -18,12 +18,18 @@ namespace Presentacion.Controllers
         private readonly IOrdenMedicaServiceWeb _ordenMedicaServiceWeb;
         private readonly IMedicoServiceWeb _medicoServiceWeb;
         private readonly IPacienteServiceWeb _pacienteServiceWeb;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public OrdenMedicaController(IOrdenMedicaServiceWeb ordenMedicaServiceWeb, IMedicoServiceWeb medicoServiceWeb, IPacienteServiceWeb pacienteServiceWeb)
+        public OrdenMedicaController(
+            IOrdenMedicaServiceWeb ordenMedicaServiceWeb,
+            IMedicoServiceWeb medicoServiceWeb,
+            IPacienteServiceWeb pacienteServiceWeb,
+            IHttpContextAccessor httpContextAccessor)
         {
             _ordenMedicaServiceWeb = ordenMedicaServiceWeb;
             _medicoServiceWeb = medicoServiceWeb;
             _pacienteServiceWeb = pacienteServiceWeb;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<IActionResult> Index(string? responseReturn, string? filtro)
@@ -42,6 +48,12 @@ namespace Presentacion.Controllers
         [HttpGet]
         public async Task<IActionResult> GestionarOrdenMedica(int? ordenMedicaId, int? pacienteId, TipoOperacion tipoOperacion = TipoOperacion.AGREGAR)
         {
+            // Obtener información del usuario de la sesión
+            var tipoUsuarioInt = _httpContextAccessor.HttpContext?.Session.GetInt32("Sesion_UsuarioTipo");
+            var tipoUsuario = (TipoUsuarioDto)(tipoUsuarioInt ?? (int)TipoUsuarioDto.PACIENTE);
+            var medicoIdSession = _httpContextAccessor.HttpContext?.Session.GetInt32("Sesion_MedicoId");
+            var nombreMedicoSession = _httpContextAccessor.HttpContext?.Session.GetString("Sesion_NombreMedico");
+
             var ordenMedica = ordenMedicaId.HasValue ? await _ordenMedicaServiceWeb.ObtenerPorId(ordenMedicaId.Value) : new OrdenMedicaDto();
 
             // Si se pasa un pacienteId, se pre-carga en la orden médica
@@ -50,13 +62,22 @@ namespace Presentacion.Controllers
                 ordenMedica.PacienteId = pacienteId.Value;
             }
 
+            // Si el usuario es MÉDICO, pre-cargar su ID
+            if (tipoUsuario == TipoUsuarioDto.MEDICO && medicoIdSession.HasValue && !ordenMedicaId.HasValue)
+            {
+                ordenMedica.MedicoId = medicoIdSession.Value;
+            }
+
             var model = new GestionarOrdenMedicaViewModel()
             {
                 OrdenMedica = ordenMedica,
                 Medicos = await _medicoServiceWeb.ObtenerTodos(string.Empty),
                 Pacientes = await _pacienteServiceWeb.ObtenerTodos(),
                 ObrasSociales = _pacienteServiceWeb.ObtenerObrasSociales(),
-                TipoOperacion = tipoOperacion
+                TipoOperacion = tipoOperacion,
+                TipoUsuario = tipoUsuario,
+                MedicoIdDelUsuario = medicoIdSession,
+                NombreMedicoDelUsuario = nombreMedicoSession
             };
 
             return View(model);
@@ -65,6 +86,12 @@ namespace Presentacion.Controllers
         [HttpPost]
         public async Task<IActionResult> GestionarOrdenMedica(GestionarOrdenMedicaViewModel model)
         {
+            // Obtener información del usuario de la sesión
+            var tipoUsuarioInt = _httpContextAccessor.HttpContext?.Session.GetInt32("Sesion_UsuarioTipo");
+            var tipoUsuario = (TipoUsuarioDto)(tipoUsuarioInt ?? (int)TipoUsuarioDto.PACIENTE);
+            var medicoIdSession = _httpContextAccessor.HttpContext?.Session.GetInt32("Sesion_MedicoId");
+            var nombreMedicoSession = _httpContextAccessor.HttpContext?.Session.GetString("Sesion_NombreMedico");
+
             if (model.OrdenMedica != null && model.OrdenMedica.LineaOrdenMedica != null && model.OrdenMedica.LineaOrdenMedica.Any())
             {
                 model.OrdenMedica.LineaOrdenMedica = model.OrdenMedica.LineaOrdenMedica
@@ -103,6 +130,9 @@ namespace Presentacion.Controllers
             model.Medicos = await _medicoServiceWeb.ObtenerTodos();
             model.Pacientes = await _pacienteServiceWeb.ObtenerTodos();
             model.ObrasSociales = _pacienteServiceWeb.ObtenerObrasSociales();
+            model.TipoUsuario = tipoUsuario;
+            model.MedicoIdDelUsuario = medicoIdSession;
+            model.NombreMedicoDelUsuario = nombreMedicoSession;
 
             model.RespuestaServidor = response;
 

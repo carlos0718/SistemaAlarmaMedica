@@ -181,5 +181,12 @@ namespace Presentacion.Controllers
             var medicos = await _turnoServiceWeb.ObtenerMedicosPorEspecialidad(especialidadId);
             return Json(medicos);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> ObtenerPacientesPorMedico(int medicoId)
+        {
+            var pacientes = await _turnoServiceWeb.ObtenerPacientesPorMedico(medicoId);
+            return Json(pacientes);
+        }
     }
 }
