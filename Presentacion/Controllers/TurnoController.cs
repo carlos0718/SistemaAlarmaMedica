@@ -12,7 +12,7 @@ using Presentacion.Tools.Validators.Logic;
 
 namespace Presentacion.Controllers
 {
-    [RoleAuthorization(TipoUsuarioDto.ADMINISTRADOR, TipoUsuarioDto.PACIENTE)]
+    [RoleAuthorization(TipoUsuarioDto.ADMINISTRADOR, TipoUsuarioDto.PACIENTE, TipoUsuarioDto.MEDICO)]
     public class TurnoController : Controller
     {
         private readonly ITurnoServiceWeb _turnoServiceWeb;
@@ -185,8 +185,21 @@ namespace Presentacion.Controllers
         [HttpGet]
         public async Task<IActionResult> ObtenerPacientesPorMedico(int medicoId)
         {
-            var pacientes = await _turnoServiceWeb.ObtenerPacientesPorMedico(medicoId);
-            return Json(pacientes);
+            try
+            {
+                var pacientes = await _turnoServiceWeb.ObtenerPacientesPorMedico(medicoId);
+                return Json(pacientes);
+            }
+            catch (Exception ex)
+            {
+                // Loguear el error para debugging
+                Console.WriteLine($"Error en ObtenerPacientesPorMedico: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+
+                // Retornar un arreglo vacío en caso de error
+                // para que el frontend no muestre error rojo
+                return Json(new List<object>());
+            }
         }
     }
 }

@@ -242,19 +242,23 @@
                 const pacienteSelect = $('#pacienteSelect');
 
                 if (medicoId) {
+                    console.log('=== INICIANDO CARGA DE PACIENTES ===');
+                    console.log('Médico ID:', medicoId);
+
                     // Llamar al controlador para obtener pacientes que tienen turnos con este médico
                     $.ajax({
-                        url: `/Turno/ObtenerPacientesPorMedico`,
-                        data: { medicoId: medicoId },
+                        url: `/Turno/ObtenerPacientesPorMedico?medicoId=${medicoId}`,
                         type: 'GET',
                         dataType: 'json',
                         success: function (data) {
-                            console.log('Pacientes recibidos:', data);
+                            console.log('✅ Respuesta exitosa recibida');
+                            console.log('Datos recibidos:', data);
                             pacienteSelect.empty();
                             pacienteSelect.append('<option value="">-- Seleccionar Paciente --</option>');
 
                             if (data && data.length > 0) {
-                                data.forEach(paciente => {
+                                console.log(`Se encontraron ${data.length} paciente(s)`);
+                                data.forEach((paciente, index) => {
                                     // Maneja tanto PascalCase como camelCase
                                     const pacienteId = paciente.PacienteId || paciente.pacienteId;
                                     const apellido = paciente.Apellido || paciente.apellido || '';
@@ -262,23 +266,39 @@
                                     const documento = paciente.Documento || paciente.documento || '';
 
                                     const nombreCompleto = `${apellido}, ${nombre} || Dni: ${documento}`;
-                                    console.log(`Agregando paciente: ${nombreCompleto} (ID: ${pacienteId})`);
+                                    console.log(`[${index + 1}] Agregando paciente: ${nombreCompleto} (ID: ${pacienteId})`);
 
                                     pacienteSelect.append(
                                         `<option value="${pacienteId}">${nombreCompleto}</option>`
                                     );
                                 });
+                                console.log('✅ Pacientes cargados exitosamente');
                             } else {
-                                console.log('No se encontraron pacientes para este médico');
+                                console.log('⚠️ No se encontraron pacientes para este médico');
                                 pacienteSelect.append('<option value="" disabled>No hay pacientes con turnos para este médico</option>');
                             }
                         },
                         error: function (xhr, status, error) {
-                            console.error('Error al llamar la API:', error);
-                            console.error('Status:', status);
-                            console.error('Response:', xhr.responseText);
+                            console.error('❌ ERROR AL CARGAR PACIENTES');
+                            console.error('Status HTTP:', xhr.status);
+                            console.error('Error:', error);
+                            console.error('Response Text:', xhr.responseText);
+                            console.error('Response Status:', status);
+
                             pacienteSelect.empty();
-                            pacienteSelect.append('<option value="">-- Error al cargar pacientes --</option>');
+                            let mensajeError = '-- Error al cargar pacientes --';
+
+                            if (xhr.status === 404) {
+                                mensajeError = '-- Error 404: Endpoint no encontrado --';
+                                console.error('⚠️ El endpoint /Turno/ObtenerPacientesPorMedico no existe');
+                            } else if (xhr.status === 500) {
+                                mensajeError = '-- Error 500: Error en el servidor --';
+                                console.error('⚠️ Error interno del servidor:', xhr.responseText);
+                            } else if (status === 'error') {
+                                mensajeError = '-- Error de conexión --';
+                            }
+
+                            pacienteSelect.append(`<option value="">${mensajeError}</option>`);
                         }
                     });
                 } else {

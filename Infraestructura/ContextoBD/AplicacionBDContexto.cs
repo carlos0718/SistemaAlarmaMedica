@@ -11,10 +11,20 @@ namespace Infraestructura.ContextoBD
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            var connection = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json").Build()
-                .GetSection("ConnectionStrings")["LocalDbConnection"];
+            // Intentar primero leer de variable de entorno
+            var connection = Environment.GetEnvironmentVariable("ConnectionStrings__LocalDbConnection");
+
+            // Si no existe en variable de entorno, leer de appsettings.json
+            if (string.IsNullOrEmpty(connection))
+            {
+                connection = new ConfigurationBuilder()
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                    .Build()
+                    .GetSection("ConnectionStrings")["LocalDbConnection"];
+            }
+
+            Console.WriteLine($"🔍 Using connection: {connection?.Substring(0, Math.Min(50, connection?.Length ?? 0))}...");
 
             optionsBuilder.UseSqlServer(connection);
         }
