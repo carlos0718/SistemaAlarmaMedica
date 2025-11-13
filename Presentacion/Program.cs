@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Presentacion.Middleware;
 using Presentacion.Services;
 
@@ -10,6 +11,7 @@ builder.Services.AddTransient<IPacienteServiceWeb, PacienteServiceWeb>();
 builder.Services.AddTransient<IUsuarioServiceWeb, UsuarioServiceWeb>();
 builder.Services.AddTransient<IOrdenMedicaServiceWeb, OrdenMedicaServiceWeb>();
 builder.Services.AddTransient<ITurnoServiceWeb, TurnoServiceWeb>();
+
 
 builder.Services.AddHttpClient<HttpClientService>();
 builder.Services.AddControllersWithViews();
@@ -49,7 +51,10 @@ builder.Services.AddAuthentication(options =>
 });
 
 var app = builder.Build();
-
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
