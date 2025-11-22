@@ -64,12 +64,19 @@
                                 <td class="align-middle">@item.ObraSocial</td>
                                 <td class="align-middle">@((item.EntregadaAlPaciente?? false) ? "SI" : "NO")</td>
                                 <td class="align-middle">
-                                    <button class="btn btn-sm btn-primary btn-modify-orden-medica" title="Editar" data-orden-medica-id="@item.OrdenMedicaId"><i class="fas fa-edit"></i></button>
-                                    @if (item.EntregadaAlPaciente != true)
+                                    @if (tipoUsuario == TipoUsuarioDto.PACIENTE)
                                     {
-                                        <button class="btn btn-sm btn-danger btn-delete-orden-medica" title="Eliminar" data-orden-medica-id="@item.OrdenMedicaId" data-bs-toggle="modal" data-bs-target="#deleteModal">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
+                                        <button class="btn btn-sm btn-primary btn-modify-orden-medica" title="Visualizar" data-orden-medica-id="@item.OrdenMedicaId"><i class="fas fa-eye"></i></button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-sm btn-primary btn-modify-orden-medica" title="Editar" data-orden-medica-id="@item.OrdenMedicaId"><i class="fas fa-edit"></i></button>
+                                        @if (item.EntregadaAlPaciente != true)
+                                        {
+                                            <button class="btn btn-sm btn-danger btn-delete-orden-medica" title="Eliminar" data-orden-medica-id="@item.OrdenMedicaId" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        }
                                     }
                                 </td>
                             </tr>

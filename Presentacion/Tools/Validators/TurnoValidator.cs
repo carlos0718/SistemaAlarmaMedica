@@ -21,8 +21,8 @@ namespace Presentacion.Tools.Validators
 
             RuleFor(model => model.Turno.FechaTurno)
                 .NotEmpty().WithMessage("El campo Fecha del Turno es requerido.")
-                .Must(fecha => fecha.HasValue && fecha.Value > DateTime.Now)
-                .WithMessage("La fecha del turno debe ser posterior a la fecha actual.");
+                .Must(fecha => fecha.HasValue && fecha.Value.Date >= DateTime.Now.Date)
+                .WithMessage("La fecha del turno debe ser a partir de hoy.");
         }
     }
 }

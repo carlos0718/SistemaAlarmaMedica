@@ -37,25 +37,60 @@
                             <th>Documento</th>
                             <th>Apellido</th>
                             <th>Nombre</th>
-                            <th>Fecha Nacimiento</th>
+                            @if (Model.TipoUsuario == Presentacion.Core.DTOs.TipoUsuarioDto.MEDICO)
+                            {
+                                <th>Fecha Consulta</th>
+                            }
+                            else if (Model.TipoUsuario == Presentacion.Core.DTOs.TipoUsuarioDto.ADMINISTRADOR)
+                            {
+                                <th>Fecha Nacimiento</th>
+                                <th>Fecha Consulta</th>
+                            }
                             <th>Acción</th>
                         </tr>
                     </thead>
                     <tbody class="align-middle">
-                        @foreach (var item in Model.Pacientes)
+                        @if (Model.PacientesConTurnos != null && Model.PacientesConTurnos.Any())
                         {
-                            <tr>
-                                <td class="align-middle">@item.Documento</td>
-                                <td class="align-middle">@item.Apellido</td>
-                                <td class="align-middle">@item.Nombre</td>
-                                <td class="align-middle">@item.FechaNacimiento?.ToString("dd/MM/yyyy")</td>
-                                <td class="align-middle">
-                                    <button class="btn btn-sm btn-primary btn-modify-paciente" title="Editar" data-paciente-id="@item.PacienteId"><i class="fas fa-edit"></i></button>
-                                    <button class="btn btn-sm btn-danger btn-delete-paciente" title="Eliminar" data-paciente-id="@item.PacienteId" data-bs-toggle="modal" data-bs-target="#deleteModal">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                </td>
-                            </tr>
+                            @if (Model.TipoUsuario == Presentacion.Core.DTOs.TipoUsuarioDto.MEDICO)
+                            {
+                                <!-- MÉDICO: Solo muestra Fecha Consulta -->
+                                @foreach (var item in Model.PacientesConTurnos.OrderByDescending(p => p.FechaTurno))
+                                {
+                                    <tr>
+                                        <td class="align-middle">@item.Paciente?.Documento</td>
+                                        <td class="align-middle">@item.Paciente?.Apellido</td>
+                                        <td class="align-middle">@item.Paciente?.Nombre</td>
+                                        <td class="align-middle">@item.FechaTurno?.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td class="align-middle">
+                                            <button class="btn btn-sm btn-primary btn-modify-paciente" title="Crear Orden Médica" data-paciente-id="@item.Paciente?.PacienteId" data-turno-id="@item.TurnoId"><i class="fas fa-edit"></i></button>
+                                            <button class="btn btn-sm btn-danger btn-delete-paciente" title="Eliminar" data-paciente-id="@item.Paciente?.PacienteId" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else if (Model.TipoUsuario == Presentacion.Core.DTOs.TipoUsuarioDto.ADMINISTRADOR)
+                            {
+                                <!-- ADMINISTRADOR: Muestra Fecha Nacimiento Y Fecha Consulta -->
+                                @foreach (var item in Model.PacientesConTurnos)
+                                {
+                                    <tr>
+                                        <td class="align-middle">@item.Paciente?.Documento</td>
+                                        <td class="align-middle">@item.Paciente?.Apellido</td>
+                                        <td class="align-middle">@item.Paciente?.Nombre</td>
+                                        <td class="align-middle">@item.Paciente?.FechaNacimiento?.ToString("dd/MM/yyyy")</td>
+                                        <td class="align-middle">@item.FechaTurno?.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td class="align-middle">
+                                            <button class="btn btn-sm btn-primary btn-modify-paciente" title="Editar" data-paciente-id="@item.Paciente?.PacienteId"><i class="fas fa-edit"></i></button>
+                                            <button class="btn btn-sm btn-danger btn-delete-paciente" title="Eliminar" data-paciente-id="@item.Paciente?.PacienteId" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
                         }
                     </tbody>
                 </table>
@@ -97,7 +132,18 @@
 
         $('.btn-modify-paciente').on('click', function () {
             var pacienteId = $(this).data('paciente-id');
-            window.location.href = '/Paciente/GestionarPaciente/?pacienteId=' + pacienteId + '&tipoOperacion=MODIFICAR';
+            var turnoId = $(this).data('turno-id');
+
+            // Si es médico, crear orden médica; si es admin, editar paciente
+            var url = '/Paciente/GestionarPaciente/?pacienteId=' + pacienteId + '&tipoOperacion=MODIFICAR';
+
+            // Verificar si estamos en contexto de médico viendo turnos
+            // (si hay turnoId en el botón, es para crear orden médica)
+            if (turnoId) {
+                url = '/OrdenMedica/GestionarOrdenMedica/?pacienteId=' + pacienteId + '&turnoId=' + turnoId + '&tipoOperacion=AGREGAR';
+            }
+
+            window.location.href = url;
         });
 
         $(".btn-delete-paciente").on("click", function () {

@@ -14,7 +14,8 @@ VALUES
     (7, N'Ginecología'),
     (8, N'Urología'),
     (9, N'Traumatología'),
-    (10, N'Psiquiatría');
+    (10, N'Psiquiatría'),
+    (11, N'Médico Clínico');
 
 SET IDENTITY_INSERT [dbo].[Especialidades] OFF;
 

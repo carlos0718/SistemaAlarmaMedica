@@ -48,20 +48,28 @@
                                 <tbody>
                                     @foreach (var turno in Model.TurnosPaciente.OrderBy(t => t.FechaTurno))
                                     {
-                                        var esPasado = turno.FechaTurno < DateTime.Now;
-                                        <tr class="@(esPasado ? "table-secondary" : "")">
+                                        var estadoTexto = turno.Estado switch
+                                        {
+                                            EstadoTurnoDto.ATENDIDO => "Atendido",
+                                            EstadoTurnoDto.CANCELADO => "Cancelado",
+                                            EstadoTurnoDto.NO_ASISTIO => "No Asistió",
+                                            _ => "Pendiente"
+                                        };
+
+                                        var claseEstado = turno.Estado switch
+                                        {
+                                            EstadoTurnoDto.ATENDIDO => "badge-success",
+                                            EstadoTurnoDto.CANCELADO => "badge-danger",
+                                            EstadoTurnoDto.NO_ASISTIO => "badge-warning",
+                                            _ => "badge-info"
+                                        };
+
+                                        <tr>
                                             <td>@turno.Medico?.Nombre @turno.Medico?.Apellido</td>
                                             <td>@turno.Medico?.Especialidad?.Nombre</td>
                                             <td>@turno.FechaTurno?.ToString("dd/MM/yyyy HH:mm")</td>
                                             <td>
-                                                @if (esPasado)
-                                                {
-                                                    <span class="badge badge-secondary">Pasado</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge badge-success">Pendiente</span>
-                                                }
+                                                <span class="badge @claseEstado">@estadoTexto</span>
                                             </td>
                                         </tr>
                                     }

@@ -8,5 +8,6 @@ namespace Dominio.Servicios.OrdenesMedicas
         Task<bool> ExistePacienteEnOrdenesMedicasAsync(int pacienteId);
         Task<bool> ExisteMedicoEnOrdenesMedicasAsync(int medicoId);
         Task<bool> ActualizarLineaOrdenMedicaAsync(int lineaOrdenMedicaId);
+        Task<bool> ExisteOrdenMedicaAsync(int pacienteId, int medicoId);
     }
 }

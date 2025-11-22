@@ -18,9 +18,9 @@ namespace Presentacion.Services
             return await _httpClientService.GetAsync<OrdenMedicaDto>($"OrdenMedica/obtenerPorId/{id}");
         }
 
-        public async Task<List<OrdenMedicaDto>> ObtenerTodos(string? filtro)
+        public async Task<List<OrdenMedicaDto>> ObtenerTodos(string? filtro, int? pacienteId = null, int? medicoId = null, int? tipoUsuario = null)
         {
-            string query = QueryStringBuilder.ToQueryString(new { filtro = filtro });
+            string query = QueryStringBuilder.ToQueryString(new { filtro = filtro, pacienteId = pacienteId, medicoId = medicoId, tipoUsuario = tipoUsuario });
             return await _httpClientService.GetAsync<List<OrdenMedicaDto>>($"OrdenMedica/obtenerTodos{query}");
         }
 
@@ -43,7 +43,7 @@ namespace Presentacion.Services
     public interface IOrdenMedicaServiceWeb
     {
         Task<OrdenMedicaDto> ObtenerPorId(int id);
-        Task<List<OrdenMedicaDto>> ObtenerTodos(string? filtro = null);
+        Task<List<OrdenMedicaDto>> ObtenerTodos(string? filtro = null, int? pacienteId = null, int? medicoId = null, int? tipoUsuario = null);
         Task<ServiceResponse> Agregar(OrdenMedicaDto medico);
         Task<ServiceResponse> Modificar(OrdenMedicaDto medico);
         Task<ServiceResponse> Eliminar(int id);

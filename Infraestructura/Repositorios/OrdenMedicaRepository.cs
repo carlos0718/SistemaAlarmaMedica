@@ -37,5 +37,12 @@ namespace Infraestructura.Repositorios
             await _dbContext.SaveChangesAsync();
             return true;
         }
+
+        public async Task<bool> ExisteOrdenMedicaAsync(int pacienteId, int medicoId)
+        {
+            return await _dbContext.Set<OrdenMedica>()
+                .Where(om => om.PacienteId == pacienteId && om.MedicoId == medicoId)
+                .AnyAsync();
+        }
     }
 }

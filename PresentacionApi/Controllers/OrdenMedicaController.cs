@@ -24,9 +24,9 @@ namespace PresentacionApi.Controllers
         }
 
         [HttpGet("obtenerTodos/", Name = "ObtenerTodosLasOrdenesMedicas")]
-        public async Task<IActionResult> ObtenerTodos([FromQuery] FiltroOrdenMedicaDto query)
+        public async Task<IActionResult> ObtenerTodos([FromQuery] FiltroOrdenMedicaDto query, [FromQuery] int? pacienteId = null, [FromQuery] int? medicoId = null, [FromQuery] int? tipoUsuario = null)
         {
-            var result = await _ordenMedicaService.ObtenerTodosAsync(query.Filtro);
+            var result = await _ordenMedicaService.ObtenerTodosAsync(query.Filtro, pacienteId, medicoId, tipoUsuario);
             return Ok(result);
         }
 

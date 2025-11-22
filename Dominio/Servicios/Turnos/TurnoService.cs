@@ -1,6 +1,7 @@
 using AutoMapper;
 using Dominio.Application.DTOs;
 using Dominio.Entidades;
+using Dominio.Servicios.OrdenesMedicas;
 using Dominio.Shared;
 
 namespace Dominio.Servicios.Turnos
@@ -9,35 +10,70 @@ namespace Dominio.Servicios.Turnos
     {
         private readonly IMapper _mapper;
         private readonly ITurnoRepository _turnoRepository;
+        private readonly IOrdenMedicaRepository _ordenMedicaRepository;
 
-        public TurnoService(IMapper mapper, ITurnoRepository turnoRepository)
+        public TurnoService(IMapper mapper, ITurnoRepository turnoRepository, IOrdenMedicaRepository ordenMedicaRepository)
         {
             _mapper = mapper;
             _turnoRepository = turnoRepository;
+            _ordenMedicaRepository = ordenMedicaRepository;
+        }
+
+        /// <summary>
+        /// Detecta si un turno fue atendido (si existe una orden médica para ese paciente-médico)
+        /// </summary>
+        private async Task<bool> FueAtendidoAsync(int pacienteId, int medicoId)
+        {
+            return await _ordenMedicaRepository.ExisteOrdenMedicaAsync(pacienteId, medicoId);
+        }
+
+        /// <summary>
+        /// Llena la propiedad FueAtendido de los turnos
+        /// </summary>
+        private async Task<List<TurnoDto>> LlenarFueAtendidoAsync(List<TurnoDto> turnos)
+        {
+            foreach (var turno in turnos)
+            {
+                if (turno.PacienteId.HasValue && turno.MedicoId.HasValue)
+                {
+                    turno.FueAtendido = await FueAtendidoAsync(turno.PacienteId.Value, turno.MedicoId.Value);
+                }
+            }
+            return turnos;
         }
 
         public async Task<TurnoDto> ObtenerPorIdAsync(int id)
         {
             var turnoDb = await _turnoRepository.GetByIdAsync(id);
-            return _mapper.Map<TurnoDto>(turnoDb);
+            var turnoDto = _mapper.Map<TurnoDto>(turnoDb);
+
+            if (turnoDto.PacienteId.HasValue && turnoDto.MedicoId.HasValue)
+            {
+                turnoDto.FueAtendido = await FueAtendidoAsync(turnoDto.PacienteId.Value, turnoDto.MedicoId.Value);
+            }
+
+            return turnoDto;
         }
 
         public async Task<List<TurnoDto>> ObtenerTodosAsync()
         {
-            var turnosDb = await _turnoRepository.GetAllAsync();
-            return _mapper.Map<List<TurnoDto>>(turnosDb);
+            var turnosDb = await _turnoRepository.ObtenerTodosConIncludesAsync();
+            var turnosDto = _mapper.Map<List<TurnoDto>>(turnosDb);
+            return await LlenarFueAtendidoAsync(turnosDto);
         }
 
         public async Task<List<TurnoDto>> ObtenerTurnosPorPacienteAsync(int pacienteId)
         {
             var turnosDb = await _turnoRepository.ObtenerTurnosPorPacienteAsync(pacienteId);
-            return _mapper.Map<List<TurnoDto>>(turnosDb);
+            var turnosDto = _mapper.Map<List<TurnoDto>>(turnosDb);
+            return await LlenarFueAtendidoAsync(turnosDto);
         }
 
         public async Task<List<TurnoDto>> ObtenerTurnosPorMedicoAsync(int medicoId)
         {
             var turnosDb = await _turnoRepository.ObtenerTurnosPorMedicoAsync(medicoId);
-            return _mapper.Map<List<TurnoDto>>(turnosDb);
+            var turnosDto = _mapper.Map<List<TurnoDto>>(turnosDb);
+            return await LlenarFueAtendidoAsync(turnosDto);
         }
 
         public async Task<ServiceResponse> AgregarAsync(TurnoDto entity)

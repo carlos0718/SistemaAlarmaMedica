@@ -39,17 +39,15 @@ namespace Presentacion.Services
         {
             try
             {
-                var jsonContent = new StringContent(JsonSerializer.Serialize(data), System.Text.Encoding.UTF8, "application/json");
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var jsonContent = new StringContent(JsonSerializer.Serialize(data, options), System.Text.Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PostAsync(endpoint, jsonContent);
                 response.EnsureSuccessStatusCode();
 
                 var jsonString = await response.Content.ReadAsStringAsync();
 
-                return JsonSerializer.Deserialize<TResponse>(jsonString, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                return JsonSerializer.Deserialize<TResponse>(jsonString, options);
             }
             catch (Exception ex)
             {
@@ -61,17 +59,15 @@ namespace Presentacion.Services
         {
             try
             {
-                var jsonContent = new StringContent(JsonSerializer.Serialize(data), System.Text.Encoding.UTF8, "application/json");
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var jsonContent = new StringContent(JsonSerializer.Serialize(data, options), System.Text.Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PutAsync(endpoint, jsonContent);
                 response.EnsureSuccessStatusCode();
 
                 var jsonString = await response.Content.ReadAsStringAsync();
 
-                return JsonSerializer.Deserialize<TResponse>(jsonString, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                return JsonSerializer.Deserialize<TResponse>(jsonString, options);
             }
             catch (Exception ex)
             {

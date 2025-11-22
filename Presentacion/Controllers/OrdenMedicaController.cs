@@ -18,17 +18,20 @@ namespace Presentacion.Controllers
         private readonly IOrdenMedicaServiceWeb _ordenMedicaServiceWeb;
         private readonly IMedicoServiceWeb _medicoServiceWeb;
         private readonly IPacienteServiceWeb _pacienteServiceWeb;
+        private readonly ITurnoServiceWeb _turnoServiceWeb;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
         public OrdenMedicaController(
             IOrdenMedicaServiceWeb ordenMedicaServiceWeb,
             IMedicoServiceWeb medicoServiceWeb,
             IPacienteServiceWeb pacienteServiceWeb,
+            ITurnoServiceWeb turnoServiceWeb,
             IHttpContextAccessor httpContextAccessor)
         {
             _ordenMedicaServiceWeb = ordenMedicaServiceWeb;
             _medicoServiceWeb = medicoServiceWeb;
             _pacienteServiceWeb = pacienteServiceWeb;
+            _turnoServiceWeb = turnoServiceWeb;
             _httpContextAccessor = httpContextAccessor;
         }
 
@@ -36,9 +39,15 @@ namespace Presentacion.Controllers
         {
             var response = Serialization.DeserializeResponse(responseReturn);
 
+            // Obtener información del usuario de la sesión
+            var tipoUsuarioInt = _httpContextAccessor.HttpContext?.Session.GetInt32("Sesion_UsuarioTipo");
+            var tipoUsuario = (TipoUsuarioDto)(tipoUsuarioInt ?? (int)TipoUsuarioDto.PACIENTE);
+            var pacienteIdSession = _httpContextAccessor.HttpContext?.Session.GetInt32("Sesion_PacienteId");
+            var medicoIdSession = _httpContextAccessor.HttpContext?.Session.GetInt32("Sesion_MedicoId");
+
             var model = new OrdenMedicaViewModel()
             {
-                OrdenesMedicas = await _ordenMedicaServiceWeb.ObtenerTodos(filtro),
+                OrdenesMedicas = await _ordenMedicaServiceWeb.ObtenerTodos(filtro, pacienteIdSession, medicoIdSession, (int?)tipoUsuario),
                 RespuestaServidor = response
             };
 
@@ -46,7 +55,7 @@ namespace Presentacion.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GestionarOrdenMedica(int? ordenMedicaId, int? pacienteId, TipoOperacion tipoOperacion = TipoOperacion.AGREGAR)
+        public async Task<IActionResult> GestionarOrdenMedica(int? ordenMedicaId, int? pacienteId, int? turnoId, TipoOperacion tipoOperacion = TipoOperacion.AGREGAR)
         {
             // Obtener información del usuario de la sesión
             var tipoUsuarioInt = _httpContextAccessor.HttpContext?.Session.GetInt32("Sesion_UsuarioTipo");
@@ -60,6 +69,12 @@ namespace Presentacion.Controllers
             if (pacienteId.HasValue && !ordenMedicaId.HasValue)
             {
                 ordenMedica.PacienteId = pacienteId.Value;
+            }
+
+            // Si se pasa un turnoId, se pre-carga en la orden médica (para trazabilidad)
+            if (turnoId.HasValue && !ordenMedicaId.HasValue)
+            {
+                ordenMedica.TurnoId = turnoId.Value;
             }
 
             // Si el usuario es MÉDICO, pre-cargar su ID
@@ -111,6 +126,34 @@ namespace Presentacion.Controllers
                     case TipoOperacion.AGREGAR:
                         model.OrdenMedica.Fecha = DateTime.Now;
                         response = await _ordenMedicaServiceWeb.Agregar(model.OrdenMedica);
+
+                        // Si la orden se creó exitosamente, marcar el turno como ATENDIDO
+                        if (response.IsSuccess && model.OrdenMedica.TurnoId.HasValue)
+                        {
+                            // Marcar el turno específico como ATENDIDO
+                            var turnoDto = await _turnoServiceWeb.ObtenerPorId(model.OrdenMedica.TurnoId.Value);
+                            if (turnoDto != null)
+                            {
+                                turnoDto.Estado = Core.DTOs.EstadoTurnoDto.ATENDIDO;
+                                await _turnoServiceWeb.Modificar(turnoDto);
+                            }
+                        }
+                        else if (response.IsSuccess && !model.OrdenMedica.TurnoId.HasValue)
+                        {
+                            // Si no hay TurnoId específico, marcar el turno más reciente como ATENDIDO (compatibilidad hacia atrás)
+                            var todosTurnos = await _turnoServiceWeb.ObtenerTodos();
+                            var turnoMasReciente = todosTurnos
+                                .Where(t => t.MedicoId == model.OrdenMedica.MedicoId &&
+                                           t.PacienteId == model.OrdenMedica.PacienteId)
+                                .OrderByDescending(t => t.FechaTurno)
+                                .FirstOrDefault();
+
+                            if (turnoMasReciente != null)
+                            {
+                                turnoMasReciente.Estado = Core.DTOs.EstadoTurnoDto.ATENDIDO;
+                                await _turnoServiceWeb.Modificar(turnoMasReciente);
+                            }
+                        }
                         break;
 
                     case TipoOperacion.MODIFICAR:

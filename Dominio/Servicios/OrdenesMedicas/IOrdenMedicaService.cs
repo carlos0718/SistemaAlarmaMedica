@@ -6,7 +6,7 @@ namespace Dominio.Servicios.OrdenesMedicas
     public interface IOrdenMedicaService
     {
         Task<OrdenMedicaDto> ObtenerPorIdAsync(int id);
-        Task<List<OrdenMedicaDto>> ObtenerTodosAsync(string? nombre);
+        Task<List<OrdenMedicaDto>> ObtenerTodosAsync(string? nombre, int? pacienteId = null, int? medicoId = null, int? tipoUsuario = null);
         Task<ServiceResponse> AgregarAsync(OrdenMedicaDto entity);
         Task<ServiceResponse> ModificarAsync(OrdenMedicaDto entity);
         Task<ServiceResponse> EliminarAsync(int id);

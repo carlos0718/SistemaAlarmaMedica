@@ -31,7 +31,7 @@ namespace Dominio.Servicios.OrdenesMedicas
             return _mapper.Map<OrdenMedicaDto>(ordenDb);
         }
 
-        public async Task<List<OrdenMedicaDto>> ObtenerTodosAsync(string? filtro)
+        public async Task<List<OrdenMedicaDto>> ObtenerTodosAsync(string? filtro, int? pacienteId = null, int? medicoId = null, int? tipoUsuario = null)
         {
             var ordenesDb = await _ordenMedicaRepository.GetAllAsyncWithIncludesAndThen(
                     query => query
@@ -40,6 +40,18 @@ namespace Dominio.Servicios.OrdenesMedicas
                             .ThenInclude(m => m.Especialidad)
                         .Include(o => o.LineaOrdenMedica)
             );
+
+            // Filtrar por usuario según su tipo
+            // 0 = ADMINISTRADOR, 1 = MEDICO, 2 = PACIENTE
+            if (tipoUsuario == 2 && pacienteId.HasValue) // PACIENTE
+            {
+                ordenesDb = ordenesDb.Where(o => o.PacienteId == pacienteId.Value).ToList();
+            }
+            else if (tipoUsuario == 1 && medicoId.HasValue) // MEDICO
+            {
+                ordenesDb = ordenesDb.Where(o => o.MedicoId == medicoId.Value).ToList();
+            }
+            // Si es ADMINISTRADOR (tipoUsuario == 0) o no se proporcionan datos, mostrar todas
 
             if (!string.IsNullOrEmpty(filtro))
                 ordenesDb = ordenesDb.Where(o =>

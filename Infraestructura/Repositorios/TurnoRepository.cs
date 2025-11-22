@@ -15,6 +15,15 @@ namespace Infraestructura.Repositorios
             _context = context;
         }
 
+        public async Task<List<Turno>> ObtenerTodosConIncludesAsync()
+        {
+            return await _context.Turnos
+                .Include(t => t.Paciente)
+                .Include(t => t.Medico)
+                .ThenInclude(m => m.Especialidad)
+                .ToListAsync();
+        }
+
         public async Task<List<Turno>> ObtenerTurnosPorPacienteAsync(int pacienteId)
         {
             return await _context.Turnos

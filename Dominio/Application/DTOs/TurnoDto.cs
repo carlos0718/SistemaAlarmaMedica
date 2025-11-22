@@ -15,5 +15,8 @@ namespace Dominio.Application.DTOs
         public DateTime? FechaTurno { get; set; }
 
         public EstadoTurno? Estado { get; set; }
+
+        // Propiedad calculada: indica si el turno fue atendido (si existe una OrdenMedica)
+        public bool FueAtendido { get; set; }
     }
 }

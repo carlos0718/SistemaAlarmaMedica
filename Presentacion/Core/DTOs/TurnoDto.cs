@@ -9,5 +9,8 @@ namespace Presentacion.Core.DTOs
         public MedicoDto? Medico { get; set; }
         public DateTime? FechaTurno { get; set; }
         public EstadoTurnoDto? Estado { get; set; }
+
+        // Propiedad calculada: indica si el turno fue atendido (si existe una OrdenMedica)
+        public bool FueAtendido { get; set; }
     }
 }

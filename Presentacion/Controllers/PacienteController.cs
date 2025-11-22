@@ -37,9 +37,16 @@ namespace Presentacion.Controllers
             var tipoUsuarioInt = _httpContextAccessor.HttpContext?.Session.GetInt32("Sesion_UsuarioTipo");
             var tipoUsuario = (TipoUsuarioDto)(tipoUsuarioInt ?? (int)TipoUsuarioDto.PACIENTE);
 
-            List<PacienteDto> pacientes;
+            var model = new PacienteViewModel()
+            {
+                RespuestaServidor = response,
+                TipoUsuario = tipoUsuario
+            };
 
-            // Si es médico, obtener solo sus pacientes (que tienen turnos con él)
+            // Obtener todos los turnos (necesarios para médico y admin)
+            var todosTurnos = await _turnoServiceWeb.ObtenerTodos();
+
+            // Si es médico, obtener sus turnos PENDIENTES ordenados por fecha
             if (tipoUsuario == TipoUsuarioDto.MEDICO)
             {
                 // Obtener el MedicoId directamente de la sesión
@@ -47,25 +54,44 @@ namespace Presentacion.Controllers
 
                 if (medicoId.HasValue && medicoId.Value > 0)
                 {
-                    pacientes = await _turnoServiceWeb.ObtenerPacientesPorMedico(medicoId.Value);
+                    // Filtrar y mostrar SOLO los turnos PENDIENTES del médico ordenados por fecha descendente
+                    var pacientesConTurnos = todosTurnos
+                        .Where(t => t.MedicoId == medicoId.Value && t.Estado == Core.DTOs.EstadoTurnoDto.PENDIENTE) // PENDIENTE
+                        .Select(t => new PacienteConTurnoDto
+                        {
+                            Paciente = t.Paciente,
+                            FechaTurno = t.FechaTurno,
+                            TurnoId = t.TurnoId // Incluir TurnoId para trazabilidad
+                        })
+                        .OrderByDescending(p => p.FechaTurno) // Ordenar del más reciente al más antiguo
+                        .ToList();
+
+                    model.PacientesConTurnos = pacientesConTurnos;
                 }
                 else
                 {
-                    pacientes = new List<PacienteDto>();
+                    model.PacientesConTurnos = new List<PacienteConTurnoDto>();
                 }
             }
             else
             {
-                // Para admin y paciente, obtener todos los pacientes
-                pacientes = await _pacienteServiceWeb.ObtenerTodos(filtro);
-            }
+                // Para admin, obtener todos los pacientes CON su fecha de turno más reciente
+                var pacientes = await _pacienteServiceWeb.ObtenerTodos(filtro);
 
-            var model = new PacienteViewModel()
-            {
-                Pacientes = pacientes,
-                RespuestaServidor = response,
-                TipoUsuario = tipoUsuario
-            };
+                // Crear lista de pacientes con turnos para el admin
+                var pacientesConTurnos = pacientes
+                    .Select(p => new PacienteConTurnoDto
+                    {
+                        Paciente = p,
+                        FechaTurno = todosTurnos
+                            .Where(t => t.PacienteId == p.PacienteId)
+                            .OrderByDescending(t => t.FechaTurno)
+                            .FirstOrDefault()?.FechaTurno
+                    })
+                    .ToList();
+
+                model.PacientesConTurnos = pacientesConTurnos;
+            }
 
             return View(model);
         }
