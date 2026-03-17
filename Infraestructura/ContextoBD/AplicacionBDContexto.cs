@@ -83,6 +83,13 @@ namespace Infraestructura.ContextoBD
                .IsRequired();
 
             modelBuilder.Entity<OrdenMedica>()
+                .HasOne(pr => pr.Turno)
+                .WithMany()
+                .HasForeignKey(si => si.TurnoId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<OrdenMedica>()
                 .HasOne(pr => pr.Paciente)
                 .WithMany()
                 .HasForeignKey(si => si.PacienteId)

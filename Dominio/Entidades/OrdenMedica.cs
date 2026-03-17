@@ -11,6 +11,7 @@
         public Medico Medico { get; set; }
 
         public int? TurnoId { get; set; }
+        public Turno? Turno { get; set; }
 
         public DateTime Fecha { get; set; }
         public ObraSocial? ObraSocial { get; set; }

@@ -41,17 +41,18 @@ namespace Dominio.Servicios.OrdenesMedicas
                         .Include(o => o.LineaOrdenMedica)
             );
 
-            // Filtrar por usuario según su tipo
-            // 0 = ADMINISTRADOR, 1 = MEDICO, 2 = PACIENTE
-            if (tipoUsuario == 2 && pacienteId.HasValue) // PACIENTE
+            // Filtrar por usuario según su tipo (ADMINISTRADOR=1, MEDICO=2, PACIENTE=3)
+            if (tipoUsuario == 3 && pacienteId.HasValue) // PACIENTE: solo sus propias órdenes
             {
-                ordenesDb = ordenesDb.Where(o => o.PacienteId == pacienteId.Value).ToList();
+                ordenesDb = ordenesDb
+                    .Where(o => o.PacienteId == pacienteId.Value)
+                    .ToList();
             }
-            else if (tipoUsuario == 1 && medicoId.HasValue) // MEDICO
+            else if (tipoUsuario == 2 && medicoId.HasValue) // MEDICO: solo las de su pacientes
             {
                 ordenesDb = ordenesDb.Where(o => o.MedicoId == medicoId.Value).ToList();
             }
-            // Si es ADMINISTRADOR (tipoUsuario == 0) o no se proporcionan datos, mostrar todas
+            // Si es ADMINISTRADOR (tipoUsuario == 1), mostrar todas
 
             if (!string.IsNullOrEmpty(filtro))
                 ordenesDb = ordenesDb.Where(o =>
