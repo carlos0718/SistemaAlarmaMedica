@@ -51,10 +51,16 @@ builder.Services.AddAuthentication(options =>
 });
 
 var app = builder.Build();
-app.UseForwardedHeaders(new ForwardedHeadersOptions
+// Clear KnownNetworks/KnownProxies so Azure Container Apps' proxy is trusted.
+// By default ASP.NET Core only trusts loopback IPs; Azure's proxy has a different IP
+// so X-Forwarded-Proto: https would be ignored, causing OAuth redirect URIs to use http://.
+var forwardedOptions = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
+};
+forwardedOptions.KnownNetworks.Clear();
+forwardedOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedOptions);
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -63,7 +69,10 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// NOTE: UseHttpsRedirection is intentionally omitted.
+// Azure Container Apps handles SSL termination at the ingress level.
+// The container only receives HTTP; adding HTTPS redirection here
+// would cause an infinite redirect loop.
 app.UseStaticFiles();
 
 app.UseRouting();
