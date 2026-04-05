@@ -190,8 +190,10 @@ Pensá en los campos que necesita cada entidad:
 - `Pelicula`: identificador, título, director, año de estreno, duración en minutos,
   y la FK hacia `Genero` (tanto el campo entero `GeneroId` como la propiedad de
   navegación `Genero`)
-- `Usuario`: identificador, nombre, email, contraseña y un campo de tipo enum
-  que indique su rol (`ADMINISTRADOR` o `EMPLEADO`)
+- `TipoUsuario`: identificador y nombre (representa el rol: `ADMINISTRADOR` o `EMPLEADO`).
+  Es una entidad de lookup — se persiste como tabla en la BD.
+- `Usuario`: identificador, nombre, email, contraseña, y la FK hacia `TipoUsuario`
+  (tanto el campo entero `TipoUsuarioId` como la propiedad de navegación `TipoUsuario`)
 
 > **Pregunta orientadora:** ¿Por qué el campo `GeneroId` va en `Pelicula` y no al revés?
 > ¿Qué pasaría en la base de datos si lo pusieras al revés?
