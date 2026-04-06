@@ -135,7 +135,37 @@ dotnet add MiniCineWeb reference Dominio
 > Es una variante pragmática: la capa de presentación referencia también `Dominio`
 > para reutilizar contratos/DTOs, aunque no sea la forma más estricta de Clean Architecture.
 
-### 0.5 — Instalar paquetes NuGet necesarios
+### 0.5 — Estructura de carpetas internas de cada proyecto
+
+Cada proyecto organiza su código en carpetas con nombres que tienen un significado preciso:
+
+**`Dominio/`**
+| Carpeta | Por qué ese nombre |
+|---|---|
+| `Entidades/` | Contiene las clases que representan objetos del negocio con identidad propia (Genero, Pelicula, Usuario). "Entidad" es el término de DDD para objetos que tienen un ID y ciclo de vida. |
+| `Core/Genericos/` | `Core` = núcleo de abstracciones reutilizables. `Genericos` = contratos genéricos (`IRepository<T>`) que no pertenecen a ningún agregado en particular. |
+| `Servicios/` | Interfaces de repositorio e interfaces de servicio de dominio, organizadas por agregado (`Generos/`, `Peliculas/`). Cada subcarpeta agrupa todo lo relacionado a ese concepto de negocio. |
+| `Application/DTOs/` | `Application` = capa de aplicación dentro del propio Dominio. `DTOs` = objetos que transportan datos entre capas sin exponer las entidades directamente. |
+| `Application/Mappings/` | Configuración de AutoMapper. Vive en `Application` porque el mapeo entidad↔DTO es una preocupación de la capa de aplicación, no del negocio puro. |
+| `Shared/` | Utilidades transversales que no pertenecen a ningún agregado específico (`ServiceResponse`). "Shared" indica que cualquier capa puede usarlo. |
+
+**`Infraestructura/`**
+| Carpeta | Por qué ese nombre |
+|---|---|
+| `ContextoBD/` | Contiene el `DbContext` de EF Core. "ContextoBD" hace explícito que es el punto de entrada a la base de datos. |
+| `Repositorios/` | Implementaciones concretas de las interfaces definidas en `Dominio/Servicios/`. Aquí vive el código que realmente ejecuta SQL vía EF Core. |
+
+**`Aplicacion/`**
+No tiene subcarpetas — solo contiene `AddIoC.cs`, el método que registra todas las dependencias en el contenedor de DI. Es una capa de composición, no de lógica.
+
+**`MiniCineApi/` y `MiniCineWeb/`**
+| Carpeta | Por qué ese nombre |
+|---|---|
+| `Controllers/` | Clases que reciben requests HTTP y devuelven responses. Nombre estándar de ASP.NET Core. |
+| `Services/` *(solo MiniCineWeb)* | Wrappers que llaman a la API mediante `HttpClient`. La web no usa servicios de dominio directamente — los llama a través de HTTP. |
+| `Views/` *(solo MiniCineWeb)* | Archivos `.cshtml` con el HTML renderizado en el servidor. Nombre estándar de ASP.NET Core MVC. |
+
+### 0.6 — Instalar paquetes NuGet necesarios
 
 ```bash
 # Infraestructura: EF Core + SQL Server + migraciones + configuración
@@ -197,6 +227,11 @@ Pensá en los campos que necesita cada entidad:
 
 > **Pregunta orientadora:** ¿Por qué el campo `GeneroId` va en `Pelicula` y no al revés?
 > ¿Qué pasaría en la base de datos si lo pusieras al revés?
+>
+> **Respuesta:** Porque la relación es muchos-a-uno: muchas películas pertenecen a un género.
+> La FK siempre va en el lado "muchos" (Pelicula), que es quien referencia al lado "uno" (Genero).
+> Si lo pusieras al revés, `Genero` tendría una columna `PeliculaId`, lo que significaría
+> que cada género solo puede tener una película — el modelo de datos quedaría incorrecto.
 
 ---
 
@@ -209,8 +244,23 @@ clases. Debe declarar al menos cinco operaciones:
 obtener por id, obtener todos, agregar, actualizar y eliminar.
 Todas deben ser asíncronas y retornar `Task` o `Task<T>`.
 
+> **¿Por qué crear una interfaz genérica?**
+> Para no repetir las mismas 5 operaciones CRUD en cada repositorio.
+> Sin ella, `IGeneroRepository` e `IPeliculaRepository` declararían exactamente
+> los mismos métodos (`GetByIdAsync`, `GetAllAsync`, etc.) con distinto tipo.
+> Con `IRepository<T>` esas operaciones se definen una sola vez y cada interfaz
+> específica simplemente hereda (`IGeneroRepository : IRepository<Genero>`) y
+> agrega solo lo que le es propio. Además permite una implementación base
+> `Repository<T>` en Infraestructura que reutiliza el CRUD genérico.
+
 > **Pregunta orientadora:** ¿Qué hace la restricción `where TEntity : class`?
 > ¿Qué pasaría si la quitaras e intentaras usar un `int` como tipo genérico?
+>
+> **Respuesta:** La restricción le dice al compilador que `TEntity` solo puede ser
+> un tipo de referencia (una clase), no un value type como `int`, `bool` o `struct`.
+> Si la quitaras, nada impediría hacer `IRepository<int>`, pero EF Core no sabe
+> cómo trackear ni persistir un `int` — no tiene tabla ni identidad. Compilaría
+> pero fallaría en runtime al intentar usar `_context.Set<int>()`.
 
 ---
 
@@ -225,6 +275,14 @@ Todas deben ser asíncronas y retornar `Task` o `Task<T>`.
 
 > **Pregunta orientadora:** ¿Por qué `IPeliculaRepository` extiende la interfaz genérica
 > en lugar de declararla de cero con todos los métodos?
+>
+> **Respuesta:** Para no duplicar los métodos CRUD que ya están definidos en `IRepository<T>`.
+> Al extender, `IPeliculaRepository` hereda automáticamente `GetByIdAsync`, `GetAllAsync`,
+> etc., y solo necesita declarar lo que es exclusivo de películas (`ObtenerPorGeneroAsync`).
+> Además, la implementación concreta `PeliculaRepository` puede heredar de `Repository<Pelicula>`
+> y ya tiene el CRUD implementado gratis — solo escribe el método extra.
+> Esto aplica el principio **DRY (Don't Repeat Yourself)**: la lógica CRUD se escribe
+> una sola vez en el genérico y todos los repositorios la reutilizan sin copiarla.
 
 ---
 
@@ -243,6 +301,13 @@ La clase debe tener:
 
 > **Pregunta orientadora:** ¿Por qué se usan métodos de fábrica estáticos en vez de
 > simplemente hacer `new ServiceResponse()`? ¿Qué ventaja da en legibilidad?
+>
+> **Respuesta:** Los métodos de fábrica expresan intención en el nombre.
+> `ServiceResponse.Success(data)` comunica inmediatamente el resultado esperado,
+> mientras que `new ServiceResponse()` no dice nada sobre el estado.
+> Además evitan que el llamador tenga que conocer cómo construir correctamente
+> el objeto (qué campos setear, en qué orden). El código en los servicios queda
+> más claro: `return ServiceResponse.Failure(errors)` vs construir el objeto a mano.
 
 ---
 
@@ -260,6 +325,14 @@ y otro `int? GeneroId`, que se usarán como query string en la API.
 
 > **Pregunta orientadora:** ¿Por qué el DTO tiene `GeneroDto?` anidado en vez de
 > solo el `GeneroId`? ¿En qué operaciones usarías uno y en cuál el otro?
+>
+> **Respuesta:** Porque en las vistas necesitás mostrar el nombre del género ("Drama"),
+> no solo su id numérico. Si solo tuvieras `GeneroId`, la vista tendría que hacer
+> otra consulta para obtener el nombre — o no podría mostrarlo.
+> - Usás `GeneroDto` anidado en operaciones de **lectura** (listado, detalle): cuando
+>   querés mostrar datos del género junto a la película.
+> - Usás solo `GeneroId` en operaciones de **escritura** (crear, modificar): cuando
+>   el usuario selecciona un género del dropdown y solo necesitás persistir la FK.
 
 ---
 
@@ -287,6 +360,12 @@ Recordá usar `.ReverseMap()` para no tener que declararlos dos veces.
 > **Pregunta orientadora:** `Pelicula` tiene una propiedad `Genero` (entidad)
 > y `PeliculaDto` tiene una propiedad `Genero` (DTO). ¿AutoMapper las mapea
 > automáticamente por tener el mismo nombre, o necesitás configuración extra?
+>
+> **Respuesta:** Las mapea automáticamente por convención de nombre, siempre que
+> también hayas declarado el mapeo `CreateMap<Genero, GeneroDto>()` en el perfil.
+> AutoMapper detecta que `Pelicula.Genero` es de tipo `Genero` y `PeliculaDto.Genero`
+> es de tipo `GeneroDto`, y usa el mapeo registrado para convertir la propiedad anidada.
+> Si no registraras el mapeo de `Genero → GeneroDto`, la propiedad quedaría en `null`.
 
 ---
 
@@ -305,6 +384,15 @@ El contexto debe:
 
 > **Pregunta orientadora:** ¿Cuántas instancias del DbContext existen durante una
 > request HTTP si lo registraste como `AddScoped`? ¿Y si usaras `AddTransient`?
+>
+> **Respuesta:** Con `AddScoped` existe **una sola instancia** por request. Todos los
+> repositorios y servicios que se resuelven durante esa request comparten el mismo contexto,
+> lo que garantiza que las operaciones participen del mismo unit of work y los cambios
+> trackeados sean consistentes.
+> Con `AddTransient` se crearía una instancia nueva cada vez que alguien pida el contexto,
+> lo que significa que dos repositorios dentro de la misma request tendrían contextos
+> distintos — podrían ver estados inconsistentes y las transacciones implícitas no
+> abarcarían ambas operaciones.
 
 ---
 
@@ -323,6 +411,12 @@ Luego creá `GeneroRepository` y `PeliculaRepository`:
 
 > **Pregunta orientadora:** ¿Por qué el repositorio concreto llama a
 > `base(dbContext)` en su constructor? ¿Qué pasaría si no lo hicieras?
+>
+> **Respuesta:** Porque el `Repository<TEntity>` genérico guarda el contexto en un campo
+> `_context` que todos los métodos CRUD usan. Si el repositorio hijo no llama a `base(dbContext)`,
+> ese campo quedaría sin inicializar y cualquier operación del padre lanzaría
+> `NullReferenceException`. `base(...)` es la forma de pasarle al constructor del padre
+> los parámetros que necesita para funcionar.
 
 ---
 
@@ -347,6 +441,13 @@ Lógica a implementar en `PeliculaService`:
 
 > **Pregunta orientadora:** ¿Por qué en el servicio se inyecta `IGeneroRepository`
 > y no `GeneroRepository` directamente?
+>
+> **Respuesta:** Para desacoplar el servicio de la implementación concreta.
+> Si inyectás `GeneroRepository` directamente, el servicio de dominio depende
+> de Infraestructura — rompe el principio de que Dominio no conoce detalles técnicos.
+> Con la interfaz, el servicio solo conoce el contrato (`IGeneroRepository`) y el
+> contenedor de DI decide qué implementación inyectar. Esto también facilita cambiar
+> la implementación (otro motor de BD, un mock en tests) sin tocar el servicio.
 
 ---
 
@@ -365,6 +466,13 @@ Registrá en el orden correcto:
 > **Pregunta orientadora:** Si registrás el DbContext como `AddTransient` en vez de
 > `AddScoped`, ¿qué problema concreto podría ocurrir dentro de una request que hace
 > dos operaciones seguidas contra la base de datos?
+>
+> **Respuesta:** Cada operación recibiría un contexto diferente. Por ejemplo, si en
+> una request primero agregás una película y luego consultás el listado, la segunda
+> operación usaría un contexto nuevo que no sabe nada de la inserción que hizo el
+> primero — podría no ver el registro recién creado si aún no se persistió.
+> Además, el tracking de entidades se pierde entre operaciones, lo que puede generar
+> inserciones duplicadas o conflictos de concurrencia difíciles de diagnosticar.
 
 ---
 
@@ -389,6 +497,13 @@ No hay lógica de negocio en los controladores.
 > **Pregunta orientadora:** ¿Por qué todos los controladores de la API retornan
 > `Ok()` aunque la operación haya fallado con `IsFailure`? ¿Quién decide si fue
 > un error de negocio y quién lo muestra al usuario?
+>
+> **Respuesta:** Porque `IsFailure` representa un error de negocio, no un error HTTP.
+> Un 200 OK significa "la request se procesó correctamente" — el servidor entendió
+> lo que se pedía y devuelve una respuesta válida. El `ServiceResponse` dentro de ese
+> 200 es quien lleva la información de si la operación tuvo éxito o no.
+> El controlador de la API solo delega y retorna. Es el controlador MVC (o el cliente)
+> quien lee `IsFailure` y decide mostrar los errores al usuario.
 
 ---
 
@@ -409,6 +524,12 @@ El middleware debe:
 > **Pregunta orientadora:** ¿Qué pasa con una request a `/Login/Index` si el array
 > de rutas públicas solo contiene `/Login`? ¿El `StartsWith` lo cubre o necesitás
 > agregar `/Login/Index` por separado?
+>
+> **Respuesta:** `StartsWith` lo cubre. Si la ruta pública es `/Login` y la request
+> llega a `/Login/Index`, la comparación `"/Login/Index".StartsWith("/Login")` devuelve
+> `true`, por lo que el middleware deja pasar la request sin verificar sesión.
+> Por eso es importante poner rutas base y no rutas completas en el array — de lo
+> contrario tendrías que enumerar cada acción individual del controlador público.
 
 ---
 
@@ -429,6 +550,15 @@ pero los `EMPLEADO` sí puedan ver el listado de películas.
 
 > **Pregunta orientadora:** ¿Cuál es la diferencia entre el Middleware de sesión
 > del paso anterior y este filtro? ¿Podrías reemplazar uno con el otro?
+>
+> **Respuesta:** El middleware actúa a nivel de pipeline HTTP — se ejecuta para **toda**
+> request antes de llegar a ningún controlador, y su único trabajo es verificar si
+> existe sesión activa. El filtro de autorización actúa a nivel de acción MVC — solo
+> se ejecuta en las acciones donde está aplicado, y verifica el **rol** del usuario.
+> No podrías reemplazar uno con el otro: el middleware no sabe de roles ni de acciones
+> específicas, y el filtro no se ejecuta si la request ni siquiera llega al controlador.
+> Se complementan: el middleware protege el acceso general, el filtro protege funcionalidades
+> específicas dentro de la app.
 
 ---
 
@@ -439,6 +569,14 @@ directamente los DTOs definidos en `Dominio/Application/DTOs/` sin duplicarlos.
 
 > **Pregunta orientadora:** ¿Qué ventaja práctica te da reutilizar estos DTOs
 > y qué costo de acoplamiento introduce entre `MiniCineWeb` y `Dominio`?
+>
+> **Respuesta:** La ventaja es que no duplicás código — si agregás un campo a `PeliculaDto`
+> en Dominio, la web lo ve automáticamente sin tener que actualizar una copia local.
+> El costo es que `MiniCineWeb` queda acoplado a `Dominio`: cualquier cambio en un DTO
+> puede romper vistas o lógica de la web sin que sea obvio. En el proyecto real
+> (`SistemaAlarmaMedica`), `Presentacion` tiene sus propios DTOs duplicados justamente
+> para evitar ese acoplamiento. Para este proyecto, la reutilización directa es
+> pragmática dado el tamaño — sabiendo que ese acoplamiento existe.
 
 ---
 
